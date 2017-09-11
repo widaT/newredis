@@ -8,7 +8,6 @@ import (
 	"github.com/widaT/yagowal/wal"
 	"github.com/widaT/yagowal/structure"
 	"github.com/widaT/yagowal/snap"
-	//"fmt"
 	"encoding/binary"
 )
 
@@ -113,9 +112,9 @@ func (w *Wal) replayWAL() {
 
 			switch  dataKv.Method {
 			case "rpush":
-				w.s.db.Rpush(dataKv.Key, dataKv.Args[0], dataKv.Args[1:]...)
+				w.s.db.Rpush( dataKv.Args...)
 			case "lpush":
-				w.s.db.Lpush(dataKv.Key, dataKv.Args[0], dataKv.Args[1:]...)
+				w.s.db.Lpush(dataKv.Args...)
 			case "lpop":
 				w.s.db.Lpop(dataKv.Key)
 			case "rpop":
@@ -125,11 +124,11 @@ func (w *Wal) replayWAL() {
 			case "hset":
 				w.s.db.Hset(dataKv.Key, string(dataKv.Args[0]), dataKv.Args[1])
 			case "sadd":
-				var strs []string
+				/*var strs []string
 				for _, b := range dataKv.Args {
 					strs = append(strs, string(b))
-				}
-				w.s.db.Sadd(dataKv.Key, strs...)
+				}*/
+				w.s.db.Sadd(dataKv.Key, dataKv.Args...)
 			case "del":
 				var strs []string
 				for _, b := range dataKv.Args {
@@ -143,11 +142,7 @@ func (w *Wal) replayWAL() {
 			case "incr":
 				w.s.db.Incr(dataKv.Key)
 			case "mset":
-				var strs []string
-				for _, b := range dataKv.Args {
-					strs = append(strs, string(b))
-				}
-				w.s.db.Mset(strs...)
+				w.s.db.Mset(dataKv.Args...)
 			case "spop":
 				w.s.db.spop(dataKv.Key, dataKv.Args[0])
 			}

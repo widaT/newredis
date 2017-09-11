@@ -1,8 +1,11 @@
 package newredis
 
-import "strings"
+import (
+	"strings"
+	"strconv"
+)
 
-type fn func(conn Conn, cmd Command) error
+type fn func(s *Server,conn Conn, cmd Command) error
 
 var commandMap = make(map[string]fn)
 
@@ -10,18 +13,216 @@ func registerCmd(cmd string,f fn)  {
 	commandMap[cmd] = f
 }
 
-func DoCmd(conn Conn, cmd Command) error {
+func DoCmd(s *Server ,conn Conn, cmd Command) error {
 	c := strings.ToLower(string(cmd.Args[0]))
 	f,found := commandMap[c]
 	if !found{
 		conn.WriteError("ERR unknown command '" + string(cmd.Args[0]) + "'")
 		return nil
 	}
-	return f(conn,cmd)
+	return f(s ,conn,cmd)
 }
 
-func set(conn Conn, cmd Command) error {
+//string opt
+func set(s *Server,conn Conn, cmd Command) error {
+	if len(cmd.Args) != 3 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	s.db.Set(string(cmd.Args[1]),cmd.Args[2])
+	conn.WriteString("OK")
+	return nil
+}
 
+func mset(s *Server,conn Conn, cmd Command) error {
+	if len(cmd.Args) < 3 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	err := s.db.Mset(cmd.Args...)
+	if err != nil {
+		conn.WriteError(err.Error())
+		return nil
+	}
+	conn.WriteString("OK")
+	return nil
+}
+
+func incr(s *Server,conn Conn, cmd Command) error {
+	if len(cmd.Args) != 2 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	num,err := s.db.Incr(string(cmd.Args[1]))
+	if err != nil {
+		conn.WriteError(err.Error())
+		return nil
+	}
+	conn.WriteInt(num)
+	return nil
+}
+
+
+func get(s *Server,conn Conn, cmd Command) error {
+	if len(cmd.Args) != 2 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,err := s.db.Get(string(cmd.Args[1]))
+	if err != nil {
+		conn.WriteError(err.Error())
+		return nil
+	}
+	if v == nil {
+		conn.WriteNull()
+	}else {
+		conn.WriteBulk(v)
+	}
 
 	return nil
+}
+
+//list opt
+func lpush(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) < 2 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,err := s.db.Lpush(cmd.Args[1:]...)
+	if err != nil {
+		conn.WriteError(err.Error())
+		return nil
+	}
+	conn.WriteInt(v)
+	return nil
+}
+
+func rpush(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) < 2 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,err := s.db.Rpush(cmd.Args[1:]...)
+	if err != nil {
+		conn.WriteError(err.Error())
+		return nil
+	}
+	conn.WriteInt(v)
+	return nil
+}
+
+func lpop(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) != 2 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,_ := s.db.Lpop(string(cmd.Args[1]))
+	if v == nil {
+		conn.WriteNull()
+	}else {
+		conn.WriteBulk(v)
+	}
+
+	return nil
+}
+
+func rpop(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) != 2 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,_ := s.db.Rpop(string(cmd.Args[1]))
+	if v == nil {
+		conn.WriteNull()
+	}else {
+		conn.WriteBulk(v)
+	}
+	return nil
+}
+
+func lrange(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) != 4 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+
+	start,err1 := strconv.Atoi(string(cmd.Args[2]))
+	end,err2 := strconv.Atoi(string(cmd.Args[3]))
+
+	if err1 != nil || err2!= nil{
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+
+	v,_ := s.db.Lrange(string(cmd.Args[1]),start,end)
+	if v == nil {
+		conn.WriteNull()
+	}else {
+		conn.WriteArray(len(v))
+		for _,val := range v {
+			conn.WriteBulk(val)
+		}
+	}
+	return nil
+}
+
+//set opt
+func sadd(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) < 3 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	num,err := s.db.Sadd(string(cmd.Args[1]),cmd.Args[2:]...)
+	if err != nil {
+		conn.WriteError(err.Error())
+	}else {
+		conn.WriteInt(num)
+	}
+	return nil
+}
+
+func spop(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) != 2 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,_ := s.db.Spop(string(cmd.Args[1]))
+	if v == nil {
+		conn.WriteNull()
+	}else {
+		conn.WriteBulk(v)
+	}
+	return nil
+}
+
+func smembers(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) != 2 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,_ := s.db.Smembers(string(cmd.Args[1]))
+	if v == nil {
+		conn.WriteNull()
+	}else {
+		conn.WriteArray(len(v))
+		for _,val := range v {
+			conn.WriteBulk(val)
+		}
+	}
+	return nil
+}
+
+
+func init()  {
+	registerCmd("set",set)
+	registerCmd("get",get)
+	registerCmd("incr",incr)
+	registerCmd("lpush",lpush)
+	registerCmd("rpush",rpush)
+	registerCmd("lpop",lpop)
+	registerCmd("rpop",rpop)
+	registerCmd("lrange",lrange)
+	registerCmd("sadd",sadd)
+	registerCmd("spop",spop)
+	registerCmd("smembers",smembers)
 }

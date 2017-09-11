@@ -95,33 +95,28 @@ type Conn interface {
 
 // NewServer returns a new Redcon server configured on "tcp" network net.
 func NewServer(addr string,
-	handler func(conn Conn, cmd Command),
+	handler func(s *Server,conn Conn, cmd Command),
 	accept func(conn Conn) bool,
 	closed func(conn Conn, err error),
 ) *Server {
-	return NewServerNetwork("tcp", addr, handler, accept, closed)
+	return NewServerNetwork("tcp", addr, accept, closed)
 }
 
 // NewServerNetworkType returns a new Redcon server. The network net must be
 // a stream-oriented network: "tcp", "tcp4", "tcp6", "unix" or "unixpacket"
 func NewServerNetwork(
 	net, laddr string,
-	handler func(conn Conn, cmd Command),
 	accept func(conn Conn) bool,
 	closed func(conn Conn, err error),
 ) *Server {
-	if handler == nil {
-		panic("handler is nil")
-	}
 	s := &Server{
 		net:     net,
 		laddr:   laddr,
-		handler: handler,
 		accept:  accept,
 		closed:  closed,
 		conns:   make(map[*conn]bool),
-		db:NewMemdb(),
 	}
+	s.db = NewMemdb(s)
 	s.w = NewWal(s)
 	return s
 }
@@ -145,22 +140,20 @@ func (s *Server) ListenAndServe() error {
 
 // ListenAndServe creates a new server and binds to addr configured on "tcp" network net.
 func ListenAndServe(addr string,
-	handler func(conn Conn, cmd Command),
 	accept func(conn Conn) bool,
 	closed func(conn Conn, err error),
 ) error {
-	return ListenAndServeNetwork("tcp", addr, handler, accept, closed)
+	return ListenAndServeNetwork("tcp", addr, accept, closed)
 }
 
 // ListenAndServe creates a new server and binds to addr. The network net must be
 // a stream-oriented network: "tcp", "tcp4", "tcp6", "unix" or "unixpacket"
 func ListenAndServeNetwork(
 	net, laddr string,
-	handler func(conn Conn, cmd Command),
 	accept func(conn Conn) bool,
 	closed func(conn Conn, err error),
 ) error {
-	return NewServerNetwork(net, laddr, handler, accept, closed).ListenAndServe()
+	return NewServerNetwork(net, laddr, accept, closed).ListenAndServe()
 }
 
 // ListenServeAndSignal serves incoming connections and passes nil or error
@@ -261,7 +254,8 @@ func handle(s *Server, c *conn) {
 				} else {
 					c.cmds = c.cmds[1:]
 				}
-				s.handler(c, cmd)
+				//s.handler(s,c, cmd)
+				DoCmd(s,c,cmd)
 			}
 			if c.detached {
 				// client has been detached
@@ -393,7 +387,7 @@ type Server struct {
 	mu      sync.Mutex
 	net     string
 	laddr   string
-	handler func(conn Conn, cmd Command)
+	handler func(s *Server, conn Conn, cmd Command)
 	accept  func(conn Conn) bool
 	closed  func(conn Conn, err error)
 	conns   map[*conn]bool

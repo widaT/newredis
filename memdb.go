@@ -35,7 +35,7 @@ type Memdb struct {
 	s *Server
 }
 
-func NewMemdb() *Memdb {
+func NewMemdb(s *Server) *Memdb {
 	db := &Memdb{
 		Values:   make(HashValue),
 		dlList:  make(HashBrStack),
@@ -44,6 +44,7 @@ func NewMemdb() *Memdb {
 		HList    :  make(HashList),
 		Hvalues :make(HashHash),
 		skiplist : make(HashSkipList),
+		s:s,
 	}
 	return db
 }
@@ -101,22 +102,20 @@ func (m *Memdb)  recoverFromSnapshot(snapshot []byte) error {
 }
 
 //list operation
-func (m *Memdb) Rpush(key string, value []byte, values ...[]byte) (int, error) {
-
-	values = append([][]byte{value}, values...)
-
+func (m *Memdb) Rpush(values ...[]byte) (int, error) {
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
+	key := string(values[0])
 	if _, exists := m.dlList[key]; !exists {
 		m.dlList[key] =structure.NewList()
 	}
 	if !m.recovebool {
-		err := m.s.w.save(&Opt{Method:"rpush",Key:key,Args:values})
+		err := m.s.w.save(&Opt{Method:"rpush",Args:values})
 		if err != nil {
 			return 0,err
 		}
 	}
-	n := m.dlList[key].Rpush(values...)
+	n := m.dlList[key].Rpush(values[1:]...)
 	return n, nil
 }
 
@@ -166,22 +165,20 @@ func (m *Memdb) Lindex(key string, index int) ([]byte, error) {
 	return ret, nil
 }
 
-func (m *Memdb) Lpush(key string, value []byte, values ...[]byte) (int, error) {
-	values = append([][]byte{value}, values...)
-
+func (m *Memdb) Lpush(values ...[]byte) (int, error) {
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
-
+	key := string(values[0])
 	if _, exists := m.dlList[key]; !exists {
 		m.dlList[key] = structure.NewList()
 	}
 	if !m.recovebool {
-		err := m.s.w.save(&Opt{Method: "lpush", Key: key, Args: values})
+		err := m.s.w.save(&Opt{Method: "lpush", Args: values})
 		if err != nil {
 			return 0, err
 		}
 	}
-	num := m.dlList[key].Lpush(values...)
+	num := m.dlList[key].Lpush(values[1:]...)
 	return num, nil
 }
 
@@ -224,7 +221,7 @@ func (m *Memdb)Rpop(key string) ([]byte,error) {
 }
 
 //set operation
-func (m *Memdb) Sadd (key string, values ...string) (int ,error){
+func (m *Memdb) Sadd (key string, values ...[]byte) (int ,error){
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
 	if _, exists := m.HSet[key]; !exists {
@@ -244,7 +241,7 @@ func (m *Memdb) Sadd (key string, values ...string) (int ,error){
 
 	count := 0
 	for _,value :=range values {
-		count =count + m.HSet[key].Add(value)
+		count =count + m.HSet[key].Add(string(value))
 	}
 	return count,nil
 }
@@ -347,9 +344,6 @@ func (m *Memdb) Hgetall(key string) (HashValue, error) {
 }
 
 func (m *Memdb) Get(key string) ([]byte, error) {
-	if m.Values == nil {
-		return nil, nil
-	}
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	return m.Values[key], nil
@@ -369,7 +363,7 @@ func (m *Memdb) Set(key string, value []byte) error {
 }
 
 
-func (m *Memdb) Mset(values ...string) error {
+func (m *Memdb) Mset(values ...[]byte) error {
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
 	if len(values) % 2 != 0 {
@@ -381,7 +375,7 @@ func (m *Memdb) Mset(values ...string) error {
 	for i,v:= range values {
 		bytes = append(bytes,[]byte(v))
 		if i % 2 == 0 {
-			kvmap[v] = []byte(values[i+1])
+			kvmap[string(v)] = values[i+1]
 		}
 	}
 	if !m.recovebool {
