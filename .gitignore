@@ -1,0 +1,6 @@
+*.test
+example/simple/
+redis.conf
+.idea
+
+data/
