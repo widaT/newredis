@@ -509,13 +509,5 @@ func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) ([][]byte, er
 	iter.Close()
 	return ret, nil
 }
-/*
-func (m *Memdb) Select(key string) error {
-	return nil
-}*/
-/*
-func (m *Memdb) Monitor() (*MonitorReply, error) {
-	return &MonitorReply{}, nil
-}*/
 
 
