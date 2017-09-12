@@ -6,7 +6,6 @@ import (
 )
 
 var addr = ":6380"
-
 func main() {
 	go log.Printf("started server at %s", addr)
 	err := newredis.ListenAndServe(addr,

@@ -124,17 +124,9 @@ func (w *Wal) replayWAL() {
 			case "hset":
 				w.s.db.Hset(dataKv.Key, string(dataKv.Args[0]), dataKv.Args[1])
 			case "sadd":
-				/*var strs []string
-				for _, b := range dataKv.Args {
-					strs = append(strs, string(b))
-				}*/
 				w.s.db.Sadd(dataKv.Key, dataKv.Args...)
 			case "del":
-				var strs []string
-				for _, b := range dataKv.Args {
-					strs = append(strs, string(b))
-				}
-				w.s.db.Del(strs[0], strs[1:]...)
+				w.s.db.Del(dataKv.Args...)
 			case "zadd":
 				key := dataKv.Args[0]
 				score := BytesToInt(dataKv.Args[1])

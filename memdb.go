@@ -315,12 +315,10 @@ func (m *Memdb) Hset(key, subkey string, value []byte) (int, error) {
 	ret := 0
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
-
 	if _, exists := m.Hvalues[key]; !exists {
 		m.Hvalues[key] = make(HashValue)
 		ret = 1
 	}
-
 	if _, exists := m.Hvalues[key][subkey]; !exists {
 		ret = 1
 	}
@@ -413,35 +411,41 @@ func (m *Memdb) Incr (key string) (int, error) {
 	return num ,nil
 }
 
-func (m *Memdb) Del(key string, keys ...string) (int, error) {
-
-	keys = append([]string{key}, keys...)
+func (m *Memdb) Del(keys ...[]byte) (int, error) {
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
 	count := 0
-
-	bytes := make([][]byte,0)
-	for _,v := range keys {
-		bytes = append(bytes,[]byte(v))
-	}
 	if !m.recovebool {
-		err := m.s.w.save(&Opt{Method: "del", Args: bytes})
+		err := m.s.w.save(&Opt{Method: "del", Args: keys})
 		if err != nil {
 			return 0, err
 		}
 	}
 	for _, k := range keys {
-		if _, exists := m.Values[k]; exists {
-			delete(m.Values, k)
+		key := string(k)
+		if _, exists := m.Values[key]; exists {
+			delete(m.Values, key)
 			count++
 		}
 		if _, exists := m.Hvalues[key]; exists {
-			delete(m.Hvalues, k)
+			delete(m.Hvalues, key)
+			count++
+		}
+		if _, exists := m.HSet[key]; exists {
+			delete(m.HSet, key)
 			count++
 		}
 
-		if _, exists := m.HSet[key]; exists {
-			delete(m.HSet, k)
+		if _, exists := m.HList[key]; exists {
+			delete(m.HList, key)
+			count++
+		}
+		if _, exists := m.skiplist[key]; exists {
+			delete(m.skiplist, key)
+			//count++
+		}
+		if _, exists := m.HSortSet[key]; exists {
+			delete(m.HSortSet, key)
 			count++
 		}
 	}
@@ -449,19 +453,15 @@ func (m *Memdb) Del(key string, keys ...string) (int, error) {
 }
 
 //sort set
-
 func (m *Memdb) Zadd (key string,score int,val string) (int ,error){
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
-
 	if _, exists := m.HSortSet[key]; !exists {
 		m.HSortSet[key] = make(HashInt)
 	}
-
 	if _, exists := m.skiplist[key]; !exists {
 		m.skiplist[key] = structure.NewIntMap()
 	}
-
 	if !m.recovebool {
 		bytes := make([][]byte, 0)
 		bytes = append(bytes, []byte(val))
@@ -481,11 +481,12 @@ func (m *Memdb) Zadd (key string,score int,val string) (int ,error){
 	return count,nil
 }
 
-
-func (m *Memdb) Zrange(key string, start, stop int,args ...string) ([][]byte, error) {
+//@todo 这个实现算法有点问题
+func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) ([][]byte, error) {
 	withscores := false
+
 	if len (args) > 0  {
-		if strings.ToLower(args[0]) != "withscores"{
+		if strings.ToLower(string(args[0])) != "withscores"{
 			return nil,errors.New("ERR syntax error")
 		}else{
 			withscores = true
@@ -493,6 +494,7 @@ func (m *Memdb) Zrange(key string, start, stop int,args ...string) ([][]byte, er
 	}
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
+
 	if _, exists := m.skiplist[key]; !exists {
 		return nil,nil
 	}
@@ -504,19 +506,13 @@ func (m *Memdb) Zrange(key string, start, stop int,args ...string) ([][]byte, er
 		}
 		ret = append(ret,[]byte(iter.Value().(string)))
 	}
+	iter.Close()
 	return ret, nil
 }
-
 /*
-
-func (m *Memdb) Ping() (*StatusReply, error) {
-	return &StatusReply{code: "PONG"}, nil
-
-}*/
-
 func (m *Memdb) Select(key string) error {
 	return nil
-}
+}*/
 /*
 func (m *Memdb) Monitor() (*MonitorReply, error) {
 	return &MonitorReply{}, nil

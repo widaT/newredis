@@ -23,6 +23,11 @@ func DoCmd(s *Server ,conn Conn, cmd Command) error {
 	return f(s ,conn,cmd)
 }
 
+func ping(s *Server,conn Conn, cmd Command) error  {
+	conn.WriteString("PONG")
+	return nil
+}
+
 //string opt
 func set(s *Server,conn Conn, cmd Command) error {
 	if len(cmd.Args) != 3 {
@@ -39,7 +44,7 @@ func mset(s *Server,conn Conn, cmd Command) error {
 		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
 		return nil
 	}
-	err := s.db.Mset(cmd.Args...)
+	err := s.db.Mset(cmd.Args[1:]...)
 	if err != nil {
 		conn.WriteError(err.Error())
 		return nil
@@ -47,6 +52,21 @@ func mset(s *Server,conn Conn, cmd Command) error {
 	conn.WriteString("OK")
 	return nil
 }
+
+func del(s *Server,conn Conn, cmd Command) error {
+	if len(cmd.Args) < 2 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	num ,err := s.db.Del(cmd.Args...)
+	if err != nil {
+		conn.WriteError(err.Error())
+		return nil
+	}
+	conn.WriteInt(num)
+	return nil
+}
+
 
 func incr(s *Server,conn Conn, cmd Command) error {
 	if len(cmd.Args) != 2 {
@@ -145,15 +165,12 @@ func lrange(s *Server,conn Conn, cmd Command)  error {
 		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
 		return nil
 	}
-
 	start,err1 := strconv.Atoi(string(cmd.Args[2]))
 	end,err2 := strconv.Atoi(string(cmd.Args[3]))
-
 	if err1 != nil || err2!= nil{
 		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
 		return nil
 	}
-
 	v,_ := s.db.Lrange(string(cmd.Args[1]),start,end)
 	if v == nil {
 		conn.WriteNull()
@@ -212,10 +229,102 @@ func smembers(s *Server,conn Conn, cmd Command)  error {
 	return nil
 }
 
+//hash opt
+func hset(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) != 4 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	num,err := s.db.Hset(string(cmd.Args[1]),string(cmd.Args[2]),cmd.Args[3])
+	if err != nil {
+		conn.WriteError(err.Error())
+	}else {
+		conn.WriteInt(num)
+	}
+	return nil
+}
+func hget(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) != 3 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,err := s.db.Hget(string(cmd.Args[1]),string(cmd.Args[2]))
+	if err != nil {
+		conn.WriteError(err.Error())
+	}else {
+		conn.WriteBulk(v)
+	}
+	return nil
+}
+func hgetall(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) != 2 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,err := s.db.Hgetall(string(cmd.Args[1]))
+	if err != nil {
+		conn.WriteError(err.Error())
+	}else {
+		conn.WriteArray(len(v) * 2)
+		for key,val := range v {
+			conn.WriteBulkString(key)
+			conn.WriteBulk(val)
+		}
+	}
+	return nil
+}
+
+//sort set
+func zadd(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) != 4 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	score ,err:= strconv.Atoi(string(cmd.Args[2]))
+	if err !=nil {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	num,err := s.db.Zadd(string(cmd.Args[1]),score,string(cmd.Args[3]))
+	if err != nil {
+		conn.WriteError(err.Error())
+	}else {
+		conn.WriteInt(num)
+	}
+	return nil
+}
+func zrange(s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) < 4 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	start,err1 := strconv.Atoi(string(cmd.Args[2]))
+	end,err2 := strconv.Atoi(string(cmd.Args[3]))
+	if err1 != nil || err2!= nil {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,err := s.db.Zrange(string(cmd.Args[1]),start,end,cmd.Args[4:]...)
+	if err != nil {
+		conn.WriteError(err.Error())
+		return nil
+	}
+	if v == nil {
+		conn.WriteNull()
+	}else {
+		conn.WriteArray(len(v))
+		for _,val := range v {
+			conn.WriteBulk(val)
+		}
+	}
+	return nil
+}
 
 func init()  {
+	registerCmd("ping",ping)
 	registerCmd("set",set)
 	registerCmd("get",get)
+	registerCmd("del",del)
 	registerCmd("incr",incr)
 	registerCmd("lpush",lpush)
 	registerCmd("rpush",rpush)
@@ -225,4 +334,10 @@ func init()  {
 	registerCmd("sadd",sadd)
 	registerCmd("spop",spop)
 	registerCmd("smembers",smembers)
+	registerCmd("mset",mset)
+	registerCmd("zrange",zrange)
+	registerCmd("zadd",zadd)
+	registerCmd("hset",hset)
+	registerCmd("hget",hget)
+	registerCmd("hgetall",hgetall)
 }
