@@ -2,13 +2,14 @@ package newredis
 
 import (
 	"sync"
-	"encoding/gob"
 	"bytes"
 	"github.com/widaT/newredis/structure"
 	"fmt"
 	"strings"
 	"errors"
 	"strconv"
+	"github.com/vmihailenco/msgpack"
+	"encoding/gob"
 )
 
 type (
@@ -60,16 +61,17 @@ func (o *Opt)String() string  {
 }
 
 func (m *Memdb) getSnapshot()  ([]byte, error) {
-	var b bytes.Buffer
-	enc := gob.NewEncoder(&b)
+	b,err := msgpack.Marshal(m)
+	if err != nil {
+		return nil,err
+	}
 	List  := m.dlList
 	m.HList = make(HashList)
 	for key,v:= range List {
 		m.HList[key] = v.Values()
 	}
-	enc.Encode(*m)
 	m.HList = nil
-	return b.Bytes(),nil
+	return b,nil
 }
 
 func (m *Memdb)  recoverFromSnapshot(snapshot []byte) error {

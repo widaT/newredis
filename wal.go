@@ -3,13 +3,13 @@ package newredis
 import (
 	"log"
 	"bytes"
-	"encoding/gob"
 	"sync"
 	"github.com/widaT/yagowal/wal"
 	"github.com/widaT/yagowal/structure"
 	"github.com/widaT/yagowal/snap"
 	"encoding/binary"
 	"os"
+	"github.com/vmihailenco/msgpack"
 )
 
 func IntToBytes(n int) []byte {
@@ -103,8 +103,7 @@ func (w *Wal) replayWAL() {
 		for _, ent := range ents {
 			//fmt.Println(ent)
 			var dataKv Opt
-			dec := gob.NewDecoder(bytes.NewBuffer(ent.Data))
-			if err := dec.Decode(&dataKv); err != nil {
+			if err := msgpack.Unmarshal(ent.Data,&dataKv); err != nil {
 				log.Fatalf("raftexample: could not decode message (%v)", err)
 				continue
 			}
@@ -156,13 +155,11 @@ func (wal *Wal)save(opt *Opt)  error {
 		defer  _Server.w.mu.Lock()*/
 	if wal.s.conf.openwal {
 		server := wal.s
-		var b bytes.Buffer
-		ens := gob.NewEncoder(&b)
-		err := ens.Encode(*opt)
+		b,err := msgpack.Marshal(opt)
 		if err != nil {
 			return err
 		}
-		es := structure.Entry{Index: server.w.nowIndex + 1, Data: b.Bytes()}
+		es := structure.Entry{Index: server.w.nowIndex + 1, Data:b}
 		wal.wal.SaveEntry(&es)
 		if server.w.nowIndex-wal.snapshotIndex >= server.w.snapcount {
 			data, err := wal.s.db.getSnapshot()
