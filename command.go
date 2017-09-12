@@ -109,7 +109,7 @@ func get(s *Server,conn Conn, cmd Command) error {
 
 //list opt
 func lpush(s *Server,conn Conn, cmd Command)  error {
-	if len(cmd.Args) < 2 {
+	if len(cmd.Args) < 3 {
 		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
 		return nil
 	}
@@ -123,7 +123,7 @@ func lpush(s *Server,conn Conn, cmd Command)  error {
 }
 
 func rpush(s *Server,conn Conn, cmd Command)  error {
-	if len(cmd.Args) < 2 {
+	if len(cmd.Args) < 3 {
 		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
 		return nil
 	}
