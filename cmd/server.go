@@ -7,7 +7,7 @@ import (
 
 //var addr = ":6380"
 func main() {
-	c := newredis.DefaultConfig().SnapCount(10)
+	c := newredis.DefaultConfig().SnapCount(1000000)
 	go log.Printf("started server at %s", c.Gaddr())
 	err := newredis.ListenAndServe(c,
 		func(conn newredis.Conn) bool {
