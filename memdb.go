@@ -482,7 +482,7 @@ func (m *Memdb) Zadd (key string,score int,val string) (int ,error){
 }
 
 //@todo 这个实现算法有点问题
-func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) ([][]byte, error) {
+func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) (*[][]byte, error) {
 	withscores := false
 
 	if len (args) > 0  {
@@ -507,7 +507,7 @@ func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) ([][]byte, er
 		ret = append(ret,[]byte(iter.Value().(string)))
 	}
 	iter.Close()
-	return ret, nil
+	return &ret, nil
 }
 
 
