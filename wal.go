@@ -160,7 +160,7 @@ func (wal *Wal)save(opt *Opt)  error {
 			return err
 		}
 		es := structure.Entry{Index: server.w.nowIndex + 1, Data:b}
-		wal.wal.SaveEntry(&es)
+		go wal.wal.SaveEntry(&es)
 		if server.w.nowIndex-wal.snapshotIndex >= server.w.snapcount {
 			data, err := wal.s.db.getSnapshot()
 			if err != nil {

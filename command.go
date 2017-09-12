@@ -180,8 +180,8 @@ func lrange(s *Server,conn Conn, cmd Command)  error {
 	if v == nil {
 		conn.WriteNull()
 	}else {
-		conn.WriteArray(len(v))
-		for _,val := range v {
+		conn.WriteArray(len(*v))
+		for _,val := range *v {
 			conn.WriteBulk(val)
 		}
 	}

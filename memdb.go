@@ -2,14 +2,12 @@ package newredis
 
 import (
 	"sync"
-	"bytes"
 	"github.com/widaT/newredis/structure"
 	"fmt"
 	"strings"
 	"errors"
 	"strconv"
 	"github.com/vmihailenco/msgpack"
-	"encoding/gob"
 )
 
 type (
@@ -76,9 +74,8 @@ func (m *Memdb) getSnapshot()  ([]byte, error) {
 
 func (m *Memdb)  recoverFromSnapshot(snapshot []byte) error {
 	var db Memdb
-	buf := bytes.NewBuffer(snapshot)
-	dec := gob.NewDecoder(buf)
-	if err := dec.Decode(&db); err != nil {
+
+	if err := msgpack.Unmarshal(snapshot,&db); err != nil {
 		return err
 	}
 	db.dlList = make(HashBrStack)
@@ -99,6 +96,7 @@ func (m *Memdb)  recoverFromSnapshot(snapshot []byte) error {
 		}
 		db.skiplist[key] = intmap
 	}
+	db.s = m.s
 	*m = db
 	return nil
 }
@@ -121,7 +119,7 @@ func (m *Memdb) Rpush(values ...[]byte) (int, error) {
 	return n, nil
 }
 
-func (m *Memdb) Lrange(key string, start, stop int) ([][]byte, error) {
+func (m *Memdb) Lrange(key string, start, stop int) (*[][]byte, error) {
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 
@@ -154,7 +152,7 @@ func (m *Memdb) Lrange(key string, start, stop int) ([][]byte, error) {
 		}
 	}
 	iter.Close()
-	return ret, nil
+	return &ret, nil
 }
 
 func (m *Memdb) Lindex(key string, index int) ([]byte, error) {
