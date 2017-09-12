@@ -5,10 +5,11 @@ import (
 	"github.com/widaT/newredis"
 )
 
-var addr = ":6380"
+//var addr = ":6380"
 func main() {
-	go log.Printf("started server at %s", addr)
-	err := newredis.ListenAndServe(addr,
+	c := newredis.DefaultConfig().SnapCount(10)
+	go log.Printf("started server at %s", c.Gaddr())
+	err := newredis.ListenAndServe(c,
 		func(conn newredis.Conn) bool {
 			return true
 		},

@@ -93,31 +93,22 @@ type Conn interface {
 	NetConn() net.Conn
 }
 
-// NewServer returns a new Redcon server configured on "tcp" network net.
-func NewServer(addr string,
-	handler func(s *Server,conn Conn, cmd Command),
-	accept func(conn Conn) bool,
-	closed func(conn Conn, err error),
-) *Server {
-	return NewServerNetwork("tcp", addr, accept, closed)
-}
 
 // NewServerNetworkType returns a new Redcon server. The network net must be
 // a stream-oriented network: "tcp", "tcp4", "tcp6", "unix" or "unixpacket"
 func NewServerNetwork(
-	net, laddr string,
+	config *Config,
 	accept func(conn Conn) bool,
 	closed func(conn Conn, err error),
 ) *Server {
 	s := &Server{
-		net:     net,
-		laddr:   laddr,
+		conf:config,
 		accept:  accept,
 		closed:  closed,
 		conns:   make(map[*conn]bool),
 	}
 	s.db = NewMemdb(s)
-	s.w = NewWal(s)
+	InitNewWal(s)
 	return s
 }
 
@@ -139,27 +130,27 @@ func (s *Server) ListenAndServe() error {
 }
 
 // ListenAndServe creates a new server and binds to addr configured on "tcp" network net.
-func ListenAndServe(addr string,
+func ListenAndServe(conf *Config,
 	accept func(conn Conn) bool,
 	closed func(conn Conn, err error),
 ) error {
-	return ListenAndServeNetwork("tcp", addr, accept, closed)
+	return ListenAndServeNetwork(conf, accept, closed)
 }
 
 // ListenAndServe creates a new server and binds to addr. The network net must be
 // a stream-oriented network: "tcp", "tcp4", "tcp6", "unix" or "unixpacket"
 func ListenAndServeNetwork(
-	net, laddr string,
+	conf *Config,
 	accept func(conn Conn) bool,
 	closed func(conn Conn, err error),
 ) error {
-	return NewServerNetwork(net, laddr, accept, closed).ListenAndServe()
+	return NewServerNetwork(conf,accept, closed).ListenAndServe()
 }
 
 // ListenServeAndSignal serves incoming connections and passes nil or error
 // when listening. signal can be nil.
 func (s *Server) ListenServeAndSignal(signal chan error) error {
-	ln, err := net.Listen(s.net, s.laddr)
+	ln, err := net.Listen(s.conf.net, s.conf.laddr)
 	if err != nil {
 		if signal != nil {
 			signal <- err
@@ -385,8 +376,9 @@ type Command struct {
 // Server defines a server for clients for managing client connections.
 type Server struct {
 	mu      sync.Mutex
-	net     string
-	laddr   string
+	/*net     string
+	laddr   string*/
+	conf    *Config
 	handler func(s *Server, conn Conn, cmd Command)
 	accept  func(conn Conn) bool
 	closed  func(conn Conn, err error)

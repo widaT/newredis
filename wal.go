@@ -9,6 +9,7 @@ import (
 	"github.com/widaT/yagowal/structure"
 	"github.com/widaT/yagowal/snap"
 	"encoding/binary"
+	"os"
 )
 
 func IntToBytes(n int) []byte {
@@ -102,14 +103,12 @@ func (w *Wal) replayWAL() {
 		for _, ent := range ents {
 			//fmt.Println(ent)
 			var dataKv Opt
-
 			dec := gob.NewDecoder(bytes.NewBuffer(ent.Data))
 			if err := dec.Decode(&dataKv); err != nil {
 				log.Fatalf("raftexample: could not decode message (%v)", err)
 				continue
 			}
 			//fmt.Println(dataKv)
-
 			switch  dataKv.Method {
 			case "rpush":
 				w.s.db.Rpush( dataKv.Args...)
@@ -152,30 +151,46 @@ func (n *Wal)loadSnapshot() *structure.SnapshotRecord {
 	return snapshot
 }
 
-func (n *Wal)save(opt *Opt)  error {
+func (wal *Wal)save(opt *Opt)  error {
 /*		_Server.w.mu.Lock()
 		defer  _Server.w.mu.Lock()*/
-/*	var b bytes.Buffer
-	ens := gob.NewEncoder(&b)
-	err := ens.Encode(*opt)
-	if err != nil {
-		return err
-	}
-	es := structure.Entry{Index: _Server.w.nowIndex +1,Data:b.Bytes()}
-	n.wal.SaveEntry(&es)
-	if _Server.w.nowIndex - _Server.w.snapshotIndex  >= _Server.w.snapcount {
-		data ,err :=w.s.db.getSnapshot()
+	if wal.s.conf.openwal {
+		server := wal.s
+		var b bytes.Buffer
+		ens := gob.NewEncoder(&b)
+		err := ens.Encode(*opt)
 		if err != nil {
 			return err
 		}
-		n.saveSnap(structure.SnapshotRecord{Data:data,Index:_Server.w.nowIndex})
-		_Server.w.snapshotIndex = _Server.w.nowIndex
+		es := structure.Entry{Index: server.w.nowIndex + 1, Data: b.Bytes()}
+		wal.wal.SaveEntry(&es)
+		if server.w.nowIndex-wal.snapshotIndex >= server.w.snapcount {
+			data, err := wal.s.db.getSnapshot()
+			if err != nil {
+				return err
+			}
+			wal.saveSnap(structure.SnapshotRecord{Data: data, Index: server.w.nowIndex})
+			server.w.snapshotIndex = server.w.nowIndex
+		}
+		server.w.nowIndex ++
 	}
-	_Server.w.nowIndex ++
-	*/return nil
+	return nil
 }
 
-func NewWal( s *Server) *Wal  {
-
-	return &Wal{s:s}
+func InitNewWal( s *Server) {
+	s.w  = &Wal{snapdir:s.conf.datadir+"snap/",waldir:s.conf.datadir+"wal/",snapcount:s.conf.snapCount}
+	s.w.s = s
+	var err error
+	s.w.wal,err =wal.New(s.w.waldir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_,err = os.Stat(s.w.snapdir)
+	if os.IsNotExist(err) {
+		if err := os.Mkdir(s.w.snapdir, 0750); err != nil {
+			log.Fatalf("raft-redis: cannot create dir for wal (%v)", err)
+		}
+	}
+	s.w.snapshotter = snap.New(s.w.snapdir)
+	s.w.replayWAL()
 }
