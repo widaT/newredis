@@ -10,7 +10,7 @@ import (
 //var addr = ":6380"
 func main() {
 	s := flag.Uint64("s",1000000,"snapshot count")
-	w :=flag.Bool("w",true,"use wal to save data to disk")
+	w :=flag.String("w","aw","use wal to save data to disk,es every second ,al allways,no no use wal")
 	p :=flag.Int("p",6380,"net port")
 	flag.Parse()
 	c := newredis.DefaultConfig().SnapCount(*s).OpenWal(*w).Laddr(fmt.Sprintf(":%d",*p))

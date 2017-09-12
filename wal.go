@@ -10,7 +10,11 @@ import (
 	"encoding/binary"
 	"os"
 	"github.com/vmihailenco/msgpack"
+	"time"
 )
+
+
+var ents []structure.Entry
 
 func IntToBytes(n int) []byte {
 	tmp := int32(n)
@@ -150,10 +154,22 @@ func (n *Wal)loadSnapshot() *structure.SnapshotRecord {
 	return snapshot
 }
 
+
+
+
 func (wal *Wal)save(opt *Opt)  error {
-/*		_Server.w.mu.Lock()
-		defer  _Server.w.mu.Lock()*/
-	if wal.s.conf.openwal {
+	switch wal.s.conf.walsavetype {
+	case "es"://every second
+		server := wal.s
+		b,err := msgpack.Marshal(opt)
+		if err != nil {
+			return err
+		}
+		wal.s.mu.Lock()
+		ents = append(ents,structure.Entry{Index: server.w.nowIndex + 1, Data:b})
+		wal.s.mu.Unlock()
+		server.w.nowIndex ++
+	case "aw"://all way
 		server := wal.s
 		b,err := msgpack.Marshal(opt)
 		if err != nil {
@@ -170,6 +186,9 @@ func (wal *Wal)save(opt *Opt)  error {
 			server.w.snapshotIndex = server.w.nowIndex
 		}
 		server.w.nowIndex ++
+	default:
+		//@do nothing
+
 	}
 	return nil
 }
@@ -190,4 +209,18 @@ func InitNewWal( s *Server) {
 	}
 	s.w.snapshotter = snap.New(s.w.snapdir)
 	s.w.replayWAL()
+	go func() {
+		for {
+			select {
+				case <-time.After(1*time.Second):
+					s.mu.Lock()
+					entscopy := ents
+					ents =[]structure.Entry{}
+					s.mu.Unlock()
+					for _,v := range entscopy {
+						s.w.wal.SaveEntry(&v)
+					}
+			}
+		}
+	}()
 }

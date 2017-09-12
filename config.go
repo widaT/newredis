@@ -5,7 +5,7 @@ type Config struct {
 	laddr   string
 	datadir  string
 	snapCount uint64
-	openwal bool
+	walsavetype string
 }
 
 func DefaultConfig() *Config {
@@ -14,7 +14,7 @@ func DefaultConfig() *Config {
 		laddr:    ":6380",
 		snapCount :100000,
 		datadir:"data/",
-		openwal:true,
+		walsavetype:"es",
 	}
 }
 
@@ -37,8 +37,8 @@ func (c *Config) DataDir(w string) *Config {
 	c.datadir = w
 	return c
 }
-func (c *Config) OpenWal(bool bool) *Config {
-	c.openwal = bool
+func (c *Config) OpenWal(s string) *Config {
+	c.walsavetype = s
 	return c
 }
 
