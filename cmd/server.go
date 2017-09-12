@@ -3,11 +3,17 @@ package main
 import (
 	"log"
 	"github.com/widaT/newredis"
+	"flag"
+	"fmt"
 )
 
 //var addr = ":6380"
 func main() {
-	c := newredis.DefaultConfig().SnapCount(1000000)
+	s := flag.Uint64("s",1000000,"snapshot count")
+	w :=flag.Bool("w",true,"use wal to save data to disk")
+	p :=flag.Int("p",6380,"net port")
+	flag.Parse()
+	c := newredis.DefaultConfig().SnapCount(*s).OpenWal(*w).Laddr(fmt.Sprintf(":%d",*p))
 	go log.Printf("started server at %s", c.Gaddr())
 	err := newredis.ListenAndServe(c,
 		func(conn newredis.Conn) bool {

@@ -97,7 +97,7 @@ func (m *Memdb)  recoverFromSnapshot(snapshot []byte) error {
 		}
 		db.skiplist[key] = intmap
 	}
-	m = &db
+	*m = db
 	return nil
 }
 
