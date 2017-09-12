@@ -28,6 +28,11 @@ func ping(s *Server,conn Conn, cmd Command) error  {
 	return nil
 }
 
+func sselect(s *Server,conn Conn, cmd Command) error  {
+	conn.WriteString("OK")
+	return nil
+}
+
 //string opt
 func set(s *Server,conn Conn, cmd Command) error {
 	if len(cmd.Args) != 3 {
@@ -322,6 +327,7 @@ func zrange(s *Server,conn Conn, cmd Command)  error {
 
 func init()  {
 	registerCmd("ping",ping)
+	registerCmd("select",sselect)
 	registerCmd("set",set)
 	registerCmd("get",get)
 	registerCmd("del",del)
