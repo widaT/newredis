@@ -16,12 +16,10 @@ func main() {
 	p :=flag.Int("p",6380,"port for net listen")
 	P :=flag.Bool("P",false,"profiling this program")
 	flag.Parse()
-
-	if flag.Arg(0) == "-v" {
+	if flag.Arg(0) == "version" {
 		fmt.Println(VERSION)
 		return
 	}
-
 	if *P {
 		go func() {
 			http.ListenAndServe("localhost:6060", nil)
