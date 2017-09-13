@@ -23,7 +23,7 @@ func main() {
 		return
 	}
 
-	if P {
+	if *P {
 		go func() {
 			http.ListenAndServe("localhost:6060", nil)
 		}()
