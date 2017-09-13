@@ -14,11 +14,10 @@ func main() {
 	s := flag.Uint64("s",1000000,"snapshot count")
 	w :=flag.String("w","aw","use wal to save data to disk,es every second ,al allways,no no use wal")
 	p :=flag.Int("p",6380,"port for net listen")
-	v :=flag.String("v","","show the version")
 	P :=flag.Bool("P",false,"profiling this program")
 	flag.Parse()
 
-	if v != nil {
+	if flag.Arg(0) == "-v" {
 		fmt.Println(VERSION)
 		return
 	}
