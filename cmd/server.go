@@ -10,7 +10,6 @@ import (
 )
 
 const VERSION = "newredis v0.1"
-//var addr = ":6380"
 func main() {
 	s := flag.Uint64("s",1000000,"snapshot count")
 	w :=flag.String("w","aw","use wal to save data to disk,es every second ,al allways,no no use wal")
