@@ -17,7 +17,6 @@ var (
 	errDetached               = errors.New("detached")
 	errIncompleteCommand      = errors.New("incomplete command")
 	errTooMuchData            = errors.New("too much data")
-	errCmdNoFound             = errors.New("ERR unknown command")
 )
 
 type errProtocol struct {
