@@ -285,7 +285,7 @@ func zadd(s *Server,conn Conn, cmd Command)  error {
 		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
 		return nil
 	}
-	score ,err:= strconv.Atoi(string(cmd.Args[2]))
+	score ,err:= strconv.ParseFloat(string(cmd.Args[2]),64)
 	if err !=nil {
 		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
 		return nil
@@ -331,7 +331,7 @@ func zrangebyscore (s *Server,conn Conn, cmd Command)  error {
 		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
 		return nil
 	}
-	v,err := s.db.ZrangeByScore(string(cmd.Args[1]),string(cmd.Args[2]),string(cmd.Args[3]),cmd.Args[4:]...)
+	v,err := s.db.ZrangeByScore(string(cmd.Args[1]),cmd.Args[2],cmd.Args[3],cmd.Args[4:]...)
 	if err != nil {
 		conn.WriteError(err.Error())
 		return nil

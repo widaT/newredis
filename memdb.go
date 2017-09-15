@@ -12,9 +12,9 @@ import (
 
 type (
 	HashValue   map[string][]byte
-	HashInt     map[string]int
+	HashFloat     map[string]float64
 	HashHash    map[string]HashValue
-	HashHashInt map[string]HashInt
+	HashHashInt map[string]HashFloat
 	HashBrStack map[string]*structure.List
 	HashSkipList map[string]*structure.SkipList
 	HashSet     map[string]*structure.Sset
@@ -453,11 +453,11 @@ func (m *Memdb) Del(keys ...[]byte) (int, error) {
 }
 
 //sort set
-func (m *Memdb) Zadd (key string,score int,val string) (int ,error){
+func (m *Memdb) Zadd (key string,score float64,val string) (int ,error){
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
 	if _, exists := m.HSortSet[key]; !exists {
-		m.HSortSet[key] = make(HashInt)
+		m.HSortSet[key] = make(HashFloat)
 	}
 	if _, exists := m.skiplist[key]; !exists {
 		m.skiplist[key] = structure.NewIntMap()
@@ -465,7 +465,7 @@ func (m *Memdb) Zadd (key string,score int,val string) (int ,error){
 	if !m.recovebool {
 		bytes := make([][]byte, 0)
 		bytes = append(bytes, []byte(val))
-		bytes = append(bytes, IntToBytes(score))
+		bytes = append(bytes, FloatToBytes(score))
 		err := m.s.w.save(&Opt{Method: "zadd", Key: key, Args: bytes})
 		if err != nil {
 			return 0, err
@@ -515,7 +515,7 @@ func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) (*[][]byte, e
 	var ret [][]byte
 	for iter.Next() {
 		if withscores {
-			ret = append(ret, []byte(fmt.Sprintf("%d",iter.Key().(int))))
+			ret = append(ret, []byte(fmt.Sprintf("%f",iter.Key().(float64))))
 		}
 		ret = append(ret,[]byte(iter.Value().(string)))
 	}
@@ -523,15 +523,30 @@ func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) (*[][]byte, e
 	return &ret, nil
 }
 
-func (m *Memdb)ZrangeByScore(key , start, stop string,args ...[]byte) (*[][]byte, error) {
-	min,err1 := strconv.Atoi(start)
-	max,err2 := strconv.Atoi(stop)
-	if err1 != nil && start != "-inf" {
+func (m *Memdb)ZrangeByScore(key string, start, stop []byte,args ...[]byte) (*[][]byte, error) {
+	min,err1 := strconv.ParseFloat(string(start),64)
+	max,err2 := strconv.ParseFloat(string(stop),64)
+	if err1 != nil && (string(start) != "-inf" || start[0] != '(' ) {
 		return nil,errors.New("ERR wrong number of arguments for zrangebyscore command")
 	}
-	if err2!= nil && stop != "+inf" {
+	if err2!= nil && (string(stop) != "+inf"|| stop[0] != '(') {
 		return nil,errors.New("ERR wrong number of arguments for zrangebyscore command")
 	}
+
+	if start[0] == '(' {
+		_,err:=fmt.Sscanf(string(start),"(%f",&min)
+		if err !=nil {
+			return nil,errors.New("ERR wrong number of arguments for zrangebyscore command")
+		}
+	}
+
+	if stop[0] == '(' {
+		_,err:=fmt.Sscanf(string(stop),"(%f",&max)
+		if err !=nil {
+			return nil,errors.New("ERR wrong number of arguments for zrangebyscore command")
+		}
+	}
+
 
 	withscores := false
 	if len (args) > 0  {
@@ -544,15 +559,15 @@ func (m *Memdb)ZrangeByScore(key , start, stop string,args ...[]byte) (*[][]byte
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 
-	if start == "-inf" {
+	if string(start) == "-inf" {
 		iter := m.skiplist[key].SeekToFirst()
-		min = iter.Key().(int)
+		min = iter.Key().(float64)
 		iter.Close()
 	}
 
-	if stop == "+inf" {
+	if string(stop) == "+inf" {
 		iter := m.skiplist[key].SeekToLast()
-		max = iter.Key().(int)
+		max = iter.Key().(float64)
 		iter.Close()
 	}
 	if _, exists := m.skiplist[key]; !exists {
@@ -562,7 +577,7 @@ func (m *Memdb)ZrangeByScore(key , start, stop string,args ...[]byte) (*[][]byte
 	var ret [][]byte
 	for iter.Next() {
 		if withscores {
-			ret = append(ret, []byte(fmt.Sprintf("%d",iter.Key().(int))))
+			ret = append(ret, []byte(fmt.Sprintf("%f",iter.Key().(float64))))
 		}
 		ret = append(ret,[]byte(iter.Value().(string)))
 	}

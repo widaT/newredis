@@ -23,11 +23,26 @@ func IntToBytes(n int) []byte {
 	return bytesBuffer.Bytes()
 }
 
+
+func FloatToBytes(n float64) []byte {
+	tmp := float64(n)
+	bytesBuffer := bytes.NewBuffer([]byte{})
+	binary.Write(bytesBuffer, binary.BigEndian, &tmp)
+	return bytesBuffer.Bytes()
+}
+
 func BytesToInt(b []byte) int {
 	bytesBuffer := bytes.NewBuffer(b)
 	var tmp int32
 	binary.Read(bytesBuffer, binary.BigEndian, &tmp)
 	return int(tmp)
+}
+
+func BytesToFloat(b []byte) float64 {
+	bytesBuffer := bytes.NewBuffer(b)
+	var tmp float64
+	binary.Read(bytesBuffer, binary.BigEndian, &tmp)
+	return tmp
 }
 
 type  unstable struct {
@@ -131,7 +146,7 @@ func (w *Wal) replayWAL() {
 				w.s.db.Del(dataKv.Args...)
 			case "zadd":
 				key := dataKv.Args[0]
-				score := BytesToInt(dataKv.Args[1])
+				score := BytesToFloat(dataKv.Args[1])
 				w.s.db.Zadd(dataKv.Key,score,string(key))
 			case "incr":
 				w.s.db.Incr(dataKv.Key)

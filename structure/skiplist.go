@@ -590,7 +590,7 @@ func New() *SkipList {
 // NewIntKey returns a SkipList that accepts int keys.
 func NewIntMap() *SkipList {
 	return NewCustomMap(func(l, r interface{}) bool {
-		return l.(int) < r.(int)
+		return l.(float64) < r.(float64)
 	})
 }
 
