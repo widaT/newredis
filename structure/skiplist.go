@@ -263,6 +263,47 @@ func (i *rangeIterator) Close() {
 	i.lowerLimit = nil
 }
 
+type indexRangeIterator struct {
+	iter
+	index int
+	upperLimit int
+	lowerLimit int
+}
+func (i *indexRangeIterator) Close() {
+	i.iter.Close()
+	i.index =0
+	i.upperLimit = 0
+	i.lowerLimit = 0
+}
+func (i *indexRangeIterator) Next() bool {
+	if !i.current.hasNext() {
+		return false
+	}
+	if i.index > i.upperLimit {
+		return false
+	}
+	i.current = i.current.next()
+	i.key = i.current.key
+	i.value = i.current.value
+	i.index ++
+	return true
+}
+
+func (i *indexRangeIterator) Previous() bool {
+	if !i.current.hasPrevious() {
+		return false
+	}
+	i.index ++
+	if i.index <= i.lowerLimit {
+		return false
+	}
+
+	i.current = i.current.previous()
+	i.key = i.current.key
+	i.value = i.current.value
+	return true
+}
+
 // Iterator returns an Iterator that will go through all elements s.
 func (s *SkipList) Iterator() Iterator {
 	return &iter{
@@ -335,6 +376,26 @@ func (s *SkipList) Range(from, to interface{}) Iterator {
 		},
 		upperLimit: to,
 		lowerLimit: from,
+	}
+}
+
+
+func (s *SkipList) IndexRange(l, u int) Iterator {
+	n := s.header
+	for  i := 0;i <= l;i++ {
+		n = n.next()
+	}
+	return &indexRangeIterator{
+		iter: iter{
+			current: &node{
+				forward:  []*node{n},
+				backward: n,
+			},
+			list: s,
+		},
+		index:l,
+		upperLimit: u,
+		lowerLimit: l,
 	}
 }
 

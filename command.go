@@ -309,6 +309,7 @@ func zrange(s *Server,conn Conn, cmd Command)  error {
 		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
 		return nil
 	}
+
 	v,err := s.db.Zrange(string(cmd.Args[1]),start,end,cmd.Args[4:]...)
 	if err != nil {
 		conn.WriteError(err.Error())
@@ -324,6 +325,28 @@ func zrange(s *Server,conn Conn, cmd Command)  error {
 	}
 	return nil
 }
+
+func zrangebyscore (s *Server,conn Conn, cmd Command)  error {
+	if len(cmd.Args) < 4 {
+		conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return nil
+	}
+	v,err := s.db.ZrangeByScore(string(cmd.Args[1]),string(cmd.Args[2]),string(cmd.Args[3]),cmd.Args[4:]...)
+	if err != nil {
+		conn.WriteError(err.Error())
+		return nil
+	}
+	if v == nil {
+		conn.WriteNull()
+	}else {
+		conn.WriteArray(len(*v))
+		for _,val := range *v {
+			conn.WriteBulk(val)
+		}
+	}
+	return nil
+}
+
 
 func init()  {
 	registerCmd("ping",ping)
@@ -342,6 +365,7 @@ func init()  {
 	registerCmd("smembers",smembers)
 	registerCmd("mset",mset)
 	registerCmd("zrange",zrange)
+	registerCmd("zrangebyscore",zrangebyscore)
 	registerCmd("zadd",zadd)
 	registerCmd("hset",hset)
 	registerCmd("hget",hget)

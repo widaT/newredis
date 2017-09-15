@@ -481,7 +481,6 @@ func (m *Memdb) Zadd (key string,score int,val string) (int ,error){
 	return count,nil
 }
 
-//@todo 这个实现算法有点问题
 func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) (*[][]byte, error) {
 	withscores := false
 
@@ -495,10 +494,71 @@ func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) (*[][]byte, e
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 
+
+	if start < 0 {
+		if start =  m.skiplist[key].Len() + start; start < 0 {
+			start = 0
+		}
+	}
+
+	if stop < 0 {
+		stop =  m.skiplist[key].Len() + stop
+		if stop <0 {
+			return nil,nil
+		}
+	}
+
 	if _, exists := m.skiplist[key]; !exists {
 		return nil,nil
 	}
-	iter := m.skiplist[key].Range(start,stop)
+	iter := m.skiplist[key].IndexRange(start,stop)
+	var ret [][]byte
+	for iter.Next() {
+		if withscores {
+			ret = append(ret, []byte(fmt.Sprintf("%d",iter.Key().(int))))
+		}
+		ret = append(ret,[]byte(iter.Value().(string)))
+	}
+	iter.Close()
+	return &ret, nil
+}
+
+func (m *Memdb)ZrangeByScore(key , start, stop string,args ...[]byte) (*[][]byte, error) {
+	min,err1 := strconv.Atoi(start)
+	max,err2 := strconv.Atoi(stop)
+	if err1 != nil && start != "-inf" {
+		return nil,errors.New("ERR wrong number of arguments for zrangebyscore command")
+	}
+	if err2!= nil && stop != "+inf" {
+		return nil,errors.New("ERR wrong number of arguments for zrangebyscore command")
+	}
+
+	withscores := false
+	if len (args) > 0  {
+		if strings.ToLower(string(args[0])) != "withscores"{
+			return nil,errors.New("ERR syntax error")
+		}else{
+			withscores = true
+		}
+	}
+	m.rwmu.RLock()
+	defer m.rwmu.RUnlock()
+
+	if start == "-inf" {
+		iter := m.skiplist[key].SeekToFirst()
+		min = iter.Key().(int)
+		iter.Close()
+	}
+
+	if stop == "+inf" {
+		iter := m.skiplist[key].SeekToLast()
+		max = iter.Key().(int)
+		iter.Close()
+	}
+	if _, exists := m.skiplist[key]; !exists {
+		return nil,nil
+	}
+	iter := m.skiplist[key].Range(min,max+1)
 	var ret [][]byte
 	for iter.Next() {
 		if withscores {
