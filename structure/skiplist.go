@@ -105,6 +105,9 @@ type Iterator interface {
 	// Next returns true if the iterator contains subsequent elements
 	// and advances its state to the next element if that is possible.
 	Next() (ok bool)
+
+	//
+	Nnext()(ok bool)
 	// Previous returns true if the iterator contains previous elements
 	// and rewinds its state to the previous element if that is possible.
 	Previous() (ok bool)
@@ -139,6 +142,18 @@ func (i iter) Value() interface{} {
 }
 
 func (i *iter) Next() bool {
+	if !i.current.hasNext() {
+		return false
+	}
+
+	i.current = i.current.next()
+	i.key = i.current.key
+	i.value = i.current.value
+
+	return true
+}
+
+func (i *iter) Nnext()bool {
 	if !i.current.hasNext() {
 		return false
 	}
@@ -230,6 +245,24 @@ func (i *rangeIterator) Next() bool {
 	return true
 }
 
+
+func (i *rangeIterator) Nnext()bool {
+	if !i.current.hasNext() {
+		return false
+	}
+
+	next := i.current.next()
+
+	if  next.key.(float64) > i.upperLimit.(float64) {
+		return false
+	}
+
+	i.current = i.current.next()
+	i.key = i.current.key
+	i.value = i.current.value
+	return true
+}
+
 func (i *rangeIterator) Previous() bool {
 	if !i.current.hasPrevious() {
 		return false
@@ -289,6 +322,11 @@ func (i *indexRangeIterator) Next() bool {
 	return true
 }
 
+func (i *indexRangeIterator) Nnext() bool {
+
+	return true
+}
+
 func (i *indexRangeIterator) Previous() bool {
 	if !i.current.hasPrevious() {
 		return false
@@ -310,6 +348,11 @@ func (s *SkipList) Iterator() Iterator {
 		current: s.header,
 		list:    s,
 	}
+}
+
+func (i *SkipList) Nnext()bool {
+
+	return true
 }
 
 // Seek returns a bidirectional iterator starting with the first element whose
@@ -588,7 +631,7 @@ func New() *SkipList {
 }
 
 // NewIntKey returns a SkipList that accepts int keys.
-func NewIntMap() *SkipList {
+func NewFloatMap() *SkipList {
 	return NewCustomMap(func(l, r interface{}) bool {
 		return l.(float64) < r.(float64)
 	})

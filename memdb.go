@@ -90,7 +90,7 @@ func (m *Memdb)  recoverFromSnapshot(snapshot []byte) error {
 	db.skiplist = make(HashSkipList)
 	//重新初始化skiplist
 	for key,val := range db.HSortSet {
-		intmap := structure.NewIntMap()
+		intmap := structure.NewFloatMap()
 		for k,v := range val {
 			intmap.Set(v,k)
 		}
@@ -460,7 +460,7 @@ func (m *Memdb) Zadd (key string,score float64,val string) (int ,error){
 		m.HSortSet[key] = make(HashFloat)
 	}
 	if _, exists := m.skiplist[key]; !exists {
-		m.skiplist[key] = structure.NewIntMap()
+		m.skiplist[key] = structure.NewFloatMap()
 	}
 	if !m.recovebool {
 		bytes := make([][]byte, 0)
@@ -482,6 +482,12 @@ func (m *Memdb) Zadd (key string,score float64,val string) (int ,error){
 }
 
 func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) (*[][]byte, error) {
+	if _, exists := m.HSortSet[key]; !exists {
+		return nil,nil
+	}
+	if _, exists := m.skiplist[key]; !exists {
+		return nil,nil
+	}
 	withscores := false
 
 	if len (args) > 0  {
@@ -524,20 +530,30 @@ func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) (*[][]byte, e
 }
 
 func (m *Memdb)ZrangeByScore(key string, start, stop []byte,args ...[]byte) (*[][]byte, error) {
+	if _, exists := m.HSortSet[key]; !exists {
+		return nil,nil
+	}
+	if _, exists := m.skiplist[key]; !exists {
+		return nil,nil
+	}
 	min,err1 := strconv.ParseFloat(string(start),64)
 	max,err2 := strconv.ParseFloat(string(stop),64)
-	if err1 != nil && (string(start) != "-inf" || start[0] != '(' ) {
+	if err1 != nil && (string(start) != "-inf" && start[0] != '(' ) {
 		return nil,errors.New("ERR wrong number of arguments for zrangebyscore command")
 	}
-	if err2!= nil && (string(stop) != "+inf"|| stop[0] != '(') {
+	if err2!= nil && (string(stop) != "+inf" && stop[0] != '(') {
 		return nil,errors.New("ERR wrong number of arguments for zrangebyscore command")
 	}
 
+	moreTlanStart := false
+	lessTlanEnd := false
 	if start[0] == '(' {
+
 		_,err:=fmt.Sscanf(string(start),"(%f",&min)
 		if err !=nil {
 			return nil,errors.New("ERR wrong number of arguments for zrangebyscore command")
 		}
+		moreTlanStart = true
 	}
 
 	if stop[0] == '(' {
@@ -545,6 +561,7 @@ func (m *Memdb)ZrangeByScore(key string, start, stop []byte,args ...[]byte) (*[]
 		if err !=nil {
 			return nil,errors.New("ERR wrong number of arguments for zrangebyscore command")
 		}
+		lessTlanEnd = true
 	}
 
 
@@ -573,11 +590,22 @@ func (m *Memdb)ZrangeByScore(key string, start, stop []byte,args ...[]byte) (*[]
 	if _, exists := m.skiplist[key]; !exists {
 		return nil,nil
 	}
-	iter := m.skiplist[key].Range(min,max+1)
+	iter := m.skiplist[key].Range(min,max)
 	var ret [][]byte
-	for iter.Next() {
+	for iter.Nnext() {
+		k := iter.Key().(float64)
+		if moreTlanStart {
+			if k == min {
+				continue
+			}
+		}
+		if lessTlanEnd {
+			if k == max{
+				break
+			}
+		}
 		if withscores {
-			ret = append(ret, []byte(fmt.Sprintf("%f",iter.Key().(float64))))
+			ret = append(ret, []byte(fmt.Sprintf("%f",k)))
 		}
 		ret = append(ret,[]byte(iter.Value().(string)))
 	}

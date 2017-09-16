@@ -310,6 +310,7 @@ func zrange(s *Server,conn Conn, cmd Command)  error {
 		return nil
 	}
 
+
 	v,err := s.db.Zrange(string(cmd.Args[1]),start,end,cmd.Args[4:]...)
 	if err != nil {
 		conn.WriteError(err.Error())
