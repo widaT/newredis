@@ -90,7 +90,7 @@ func (m *Memdb)  recoverFromSnapshot(snapshot []byte) error {
 	db.skiplist = make(HashSkipList)
 	//重新初始化skiplist
 	for key,val := range db.HSortSet {
-		intmap := structure.NewFloatMap()
+		intmap := structure.NewSkipList()
 		for k,v := range val {
 			intmap.Set(v,k)
 		}
@@ -460,7 +460,7 @@ func (m *Memdb) Zadd (key string,score float64,val string) (int ,error){
 		m.HSortSet[key] = make(HashFloat)
 	}
 	if _, exists := m.skiplist[key]; !exists {
-		m.skiplist[key] = structure.NewFloatMap()
+		m.skiplist[key] = structure.NewSkipList()
 	}
 	if !m.recovebool {
 		bytes := make([][]byte, 0)
@@ -472,9 +472,11 @@ func (m *Memdb) Zadd (key string,score float64,val string) (int ,error){
 		}
 	}
 	count := 0
-	_ ,found :=m.HSortSet[key][val]
+	old ,found :=m.HSortSet[key][val]
 	if !found {
 		count = 1
+		//删除原来的skiplist
+		m.skiplist[key].Delete(old,val)
 	}
 	m.HSortSet[key][val] = score
 	m.skiplist[key].Set(score,val)
@@ -521,9 +523,9 @@ func (m *Memdb) Zrange(key string, start, stop int,args ...[]byte) (*[][]byte, e
 	var ret [][]byte
 	for iter.Next() {
 		if withscores {
-			ret = append(ret, []byte(fmt.Sprintf("%f",iter.Key().(float64))))
+			ret = append(ret, []byte(strconv.FormatFloat(iter.Key(), 'g', -1, 64)))
 		}
-		ret = append(ret,[]byte(iter.Value().(string)))
+		ret = append(ret,[]byte(iter.Value()))
 	}
 	iter.Close()
 	return &ret, nil
@@ -578,13 +580,13 @@ func (m *Memdb)ZrangeByScore(key string, start, stop []byte,args ...[]byte) (*[]
 
 	if string(start) == "-inf" {
 		iter := m.skiplist[key].SeekToFirst()
-		min = iter.Key().(float64)
+		min = iter.Key()
 		iter.Close()
 	}
 
 	if string(stop) == "+inf" {
 		iter := m.skiplist[key].SeekToLast()
-		max = iter.Key().(float64)
+		max = iter.Key()
 		iter.Close()
 	}
 	if _, exists := m.skiplist[key]; !exists {
@@ -593,7 +595,7 @@ func (m *Memdb)ZrangeByScore(key string, start, stop []byte,args ...[]byte) (*[]
 	iter := m.skiplist[key].Range(min,max)
 	var ret [][]byte
 	for iter.Nnext() {
-		k := iter.Key().(float64)
+		k := iter.Key()
 		if moreTlanStart {
 			if k == min {
 				continue
@@ -605,9 +607,9 @@ func (m *Memdb)ZrangeByScore(key string, start, stop []byte,args ...[]byte) (*[]
 			}
 		}
 		if withscores {
-			ret = append(ret, []byte(fmt.Sprintf("%f",k)))
+			ret = append(ret, []byte(strconv.FormatFloat(k, 'g', -1, 64)))
 		}
-		ret = append(ret,[]byte(iter.Value().(string)))
+		ret = append(ret,[]byte(iter.Value()))
 	}
 	iter.Close()
 	return &ret, nil
