@@ -17,7 +17,7 @@ type (
 	HashHashInt map[string]HashFloat
 	HashBrStack map[string]*structure.List
 	HashSkipList map[string]*structure.SkipList
-	HashSet     map[string]*structure.Sset
+	HashSet     map[string]*structure.Set
 	HashList    map[string][][]byte
 )
 
@@ -475,7 +475,8 @@ func (m *Memdb) Zadd (key string,score float64,val string) (int ,error){
 	old ,found :=m.HSortSet[key][val]
 	if !found {
 		count = 1
-		//删除原来的skiplist
+	}else {
+		//del the old key val
 		m.skiplist[key].Delete(old,val)
 	}
 	m.HSortSet[key][val] = score
@@ -594,7 +595,7 @@ func (m *Memdb)ZrangeByScore(key string, start, stop []byte,args ...[]byte) (*[]
 	}
 	iter := m.skiplist[key].Range(min,max)
 	var ret [][]byte
-	for iter.Nnext() {
+	for iter.Next() {
 		k := iter.Key()
 		if moreTlanStart {
 			if k == min {

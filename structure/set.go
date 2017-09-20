@@ -6,19 +6,19 @@ import (
 	"time"
 )
 
-type Sset struct {
+type Set struct {
 	mu sync.Mutex
 	Key   string
 	Mset   map[string]struct{}
 }
 
-func (s *Sset) Len() int {
+func (s *Set) Len() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return len(s.Mset)
 }
 
-func (s *Sset) Add(key string) int  {
+func (s *Set) Add(key string) int  {
 	s.mu.Lock()
 	defer  s.mu.Unlock()
 
@@ -30,14 +30,14 @@ func (s *Sset) Add(key string) int  {
 	return 1
 }
 
-func (s *Sset)Del(key string) error  {
+func (s *Set)Del(key string) error  {
 	s.mu.Lock()
 	defer  s.mu.Unlock()
 	delete(s.Mset,key)
 	return nil
 }
 
-func (s *Sset)Members() *[][]byte {
+func (s *Set)Members() *[][]byte {
 	s.mu.Lock()
 	defer  s.mu.Unlock()
 	var ret [][]byte
@@ -48,7 +48,7 @@ func (s *Sset)Members() *[][]byte {
 	return &ret
 }
 
-func (s *Sset) Exists(key string) int {
+func (s *Set) Exists(key string) int {
 	s.mu.Lock()
 	defer  s.mu.Unlock()
 
@@ -58,7 +58,7 @@ func (s *Sset) Exists(key string) int {
 	return 0
 }
 
-func (s *Sset) RandomKey()  string  {
+func (s *Set) RandomKey()  string  {
 	var keys []string
 	for k,_ :=range s.Mset {
 		keys = append(keys,k)
@@ -76,8 +76,8 @@ func (s *Sset) RandomKey()  string  {
 	return keys[index]
 }
 
-func NewSset(key string) *Sset {
-	return &Sset{
+func NewSset(key string) *Set {
+	return &Set{
 		Key:   key,
 		Mset: make(map[string]struct{}),
 	}

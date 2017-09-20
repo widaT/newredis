@@ -72,8 +72,6 @@ type Iterator interface {
 	// and advances its state to the next element if that is possible.
 	Next() (ok bool)
 
-	//
-	Nnext()(ok bool)
 	// Previous returns true if the iterator contains previous elements
 	// and rewinds its state to the previous element if that is possible.
 	Previous() (ok bool)
@@ -119,17 +117,7 @@ func (i *iter) Next() bool {
 	return true
 }
 
-func (i *iter) Nnext()bool {
-	if !i.current.hasNext() {
-		return false
-	}
 
-	i.current = i.current.next()
-	i.key = i.current.key
-	i.value = i.current.value
-
-	return true
-}
 
 func (i *iter) Previous() bool {
 	if !i.current.hasPrevious() {
@@ -213,23 +201,6 @@ func (i *rangeIterator) Next() bool {
 }
 
 
-func (i *rangeIterator) Nnext()bool {
-	if !i.current.hasNext() {
-		return false
-	}
-
-	next := i.current.next()
-
-	if  next.key > i.upperLimit {
-		return false
-	}
-
-	i.current = i.current.next()
-	i.key = i.current.key
-	i.value = i.current.value
-	return true
-}
-
 func (i *rangeIterator) Previous() bool {
 	if !i.current.hasPrevious() {
 		return false
@@ -289,11 +260,6 @@ func (i *indexRangeIterator) Next() bool {
 	return true
 }
 
-func (i *indexRangeIterator) Nnext() bool {
-
-	return true
-}
-
 func (i *indexRangeIterator) Previous() bool {
 	if !i.current.hasPrevious() {
 		return false
@@ -317,10 +283,6 @@ func (s *SkipList) Iterator() Iterator {
 	}
 }
 
-func (i *SkipList) Nnext()bool {
-
-	return true
-}
 
 // Seek returns a bidirectional iterator starting with the first element whose
 // key is greater or equal to key; otherwise, a nil iterator is returned.
@@ -338,11 +300,6 @@ func (s *SkipList) Seek(key float64) Iterator {
 		list:    s,
 		value:   current.value,
 	}
-	/*	for pre := current.previous();pre!= nil && pre.key == key;pre = pre.previous(){
-			i.current = pre
-			i.key = pre.key
-			i.value = pre.value
-		}*/
 
 	return &i
 }
@@ -614,96 +571,4 @@ func NewSkipList() *SkipList {
 		},
 		MaxLevel: DefaultMaxLevel,
 	}
-}
-
-// Set is an ordered set data structure.
-//
-// Its elements must implement the Ordered interface. It uses a
-// SkipList for storage, and it gives you similar performance
-// guarantees.
-//
-// To iterate over a set (where s is a *Set):
-//
-//	for i := s.Iterator(); i.Next(); {
-//		// do something with i.Key().
-//		// i.Value() will be nil.
-//	}
-type Set struct {
-	skiplist SkipList
-}
-
-// NewSet returns a new Set.
-func NewSet() *Set {
-	comparator := func(left, right interface{}) bool {
-		return left.(Ordered).LessThan(right.(Ordered))
-	}
-	return NewCustomSet(comparator)
-}
-
-// NewCustomSet returns a new Set that will use lessThan as the
-// comparison function. lessThan should define a linear order on
-// elements you intend to use with the Set.
-func NewCustomSet(lessThan func(l, r interface{}) bool) *Set {
-	return &Set{skiplist: SkipList{
-		header: &node{
-			forward: []*node{nil},
-		},
-		MaxLevel: DefaultMaxLevel,
-	}}
-}
-
-// NewIntSet returns a new Set that accepts int elements.
-func NewIntSet() *Set {
-	return NewCustomSet(func(l, r interface{}) bool {
-		return l.(int) < r.(int)
-	})
-}
-
-// NewStringSet returns a new Set that accepts string elements.
-func NewStringSet() *Set {
-	return NewCustomSet(func(l, r interface{}) bool {
-		return l.(string) < r.(string)
-	})
-}
-
-// Add adds key to s.
-func (s *Set) Add(key float64) {
-	s.skiplist.Set(key, "")
-}
-
-// Remove tries to remove key from the set. It returns true if key was
-// present.
-func (s *Set) Remove(key float64) (ok bool) {
-	return  s.skiplist.DeleteAll(key)
-}
-
-// Len returns the length of the set.
-func (s *Set) Len() int {
-	return s.skiplist.Len()
-}
-
-// Contains returns true if key is present in s.
-func (s *Set) Contains(key float64) bool {
-	_, ok := s.skiplist.Get(key)
-	return ok
-}
-
-func (s *Set) Iterator() Iterator {
-	return s.skiplist.Iterator()
-}
-
-// Range returns an iterator that will go through all the elements of
-// the set that are greater or equal than from, but less than to.
-func (s *Set) Range(from, to float64) Iterator {
-	return s.skiplist.Range(from, to)
-}
-
-// SetMaxLevel sets MaxLevel in the underlying skip list.
-func (s *Set) SetMaxLevel(newMaxLevel int) {
-	s.skiplist.MaxLevel = newMaxLevel
-}
-
-// GetMaxLevel returns MaxLevel fo the underlying skip list.
-func (s *Set) GetMaxLevel() int {
-	return s.skiplist.MaxLevel
 }
