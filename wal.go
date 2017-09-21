@@ -211,9 +211,11 @@ func InitNewWal( s *Server) {
 	}
 	s.w.snapshotter = snap.New(s.w.snapdir)
 	s.w.replayWAL()
-	go func() {
-		for {
-			select {
+
+	if s.conf.walsavetype  == "es" {
+		go func() {
+			for {
+				select {
 				case <-time.After(1*time.Second):
 					s.mu.Lock()
 					entscopy := ents
@@ -222,7 +224,9 @@ func InitNewWal( s *Server) {
 					for _,v := range entscopy {
 						s.w.wal.SaveEntry(&v)
 					}
+				}
 			}
-		}
-	}()
+		}()
+	}
+
 }
