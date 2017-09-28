@@ -1,0 +1,145 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "m2wo60kUM6mBSXYR4AtpI/vz13c=",
+			"path": "github.com/coreos/go-systemd/journal",
+			"revision": "7c9533367ef925dc1078d75e5b7141e10da2c4e8",
+			"revisionTime": "2016-12-12T10:46:09Z"
+		},
+		{
+			"checksumSHA1": "nS4jSOV8UzNrPLQUQx63rxAGqWs=",
+			"path": "github.com/coreos/pkg/capnslog",
+			"revision": "447b7ec906e523386d9c53be15b55a8ae86ea944",
+			"revisionTime": "2016-10-26T22:29:26Z"
+		},
+		{
+			"checksumSHA1": "dBt0GZPqmudAsHMoELhqIlItvNc=",
+			"path": "github.com/golang/snappy",
+			"revision": "d9eb7a3d35ec988b8585d4a0068e462c27d28380",
+			"revisionTime": "2016-05-29T05:00:41Z"
+		},
+		{
+			"checksumSHA1": "ntajYEg38+x8b9IpceBfZRLc8Bo=",
+			"path": "github.com/syndtr/goleveldb/leveldb",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "N9nV8IFnjnSv7vDyFmI2KY1+3UQ=",
+			"path": "github.com/syndtr/goleveldb/leveldb/cache",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "fX6hNc8MjmY0uRXLeDDR1yP1RW4=",
+			"path": "github.com/syndtr/goleveldb/leveldb/comparer",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "KPLIq+6AiJ0T3M8ujkuPkUHExZg=",
+			"path": "github.com/syndtr/goleveldb/leveldb/errors",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "nzy2qKBrYeptC6EU0+fOOYVRCWk=",
+			"path": "github.com/syndtr/goleveldb/leveldb/filter",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "7t3sI0tdTpv9BsSg6DftVcs5cag=",
+			"path": "github.com/syndtr/goleveldb/leveldb/iterator",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "HiQVGWLBnlhm0isR9T7mAeAjoTo=",
+			"path": "github.com/syndtr/goleveldb/leveldb/journal",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "tN2WSF9CZjCbscI4d0mG0yOLPQ8=",
+			"path": "github.com/syndtr/goleveldb/leveldb/memdb",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "6Umu4vGG/SklM+2SKN3Gbr9mafs=",
+			"path": "github.com/syndtr/goleveldb/leveldb/opt",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "Ojx7KzGNCvLonQ6ANXCdBhSOPMM=",
+			"path": "github.com/syndtr/goleveldb/leveldb/storage",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "xryWOq73uFiB8+DmSXCmu7+WVAI=",
+			"path": "github.com/syndtr/goleveldb/leveldb/table",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "2SrjE6OkM/oNTOFgZKyMglIx+PQ=",
+			"path": "github.com/syndtr/goleveldb/leveldb/util",
+			"revision": "b89cc31ef7977104127d34c1bd31ebd1a9db2199",
+			"revisionTime": "2017-07-25T06:48:36Z"
+		},
+		{
+			"checksumSHA1": "mge5ZwNYAgAr667KajRHTBQcNeQ=",
+			"path": "github.com/vmihailenco/msgpack",
+			"revision": "de4b4857c10538d591bee30e8114176008f8b9d0",
+			"revisionTime": "2017-08-12T08:04:07Z"
+		},
+		{
+			"checksumSHA1": "99RPNNpjjyb25XZ4lLrT/Hm3nxQ=",
+			"path": "github.com/vmihailenco/msgpack/codes",
+			"revision": "de4b4857c10538d591bee30e8114176008f8b9d0",
+			"revisionTime": "2017-08-12T08:04:07Z"
+		},
+		{
+			"checksumSHA1": "uz0RiTfJh73kubW6tSlFwKKd9y4=",
+			"path": "github.com/widaT/gowal/pkg/serialize",
+			"revision": "5519ac27bd69160b1a52e8e4f8b9ed4f34b12ae9",
+			"revisionTime": "2017-08-29T08:21:33Z"
+		},
+		{
+			"checksumSHA1": "A4SKD5GijdPvtlvf1ceJBrxZzT0=",
+			"path": "github.com/widaT/yagowal/ioutil",
+			"revision": "0b4641b413be7460e802abd0a9ac7997686e0548",
+			"revisionTime": "2017-09-11T02:26:16Z"
+		},
+		{
+			"checksumSHA1": "SZhEm0gWhvN2dcQIHDIX/WVoKZ0=",
+			"path": "github.com/widaT/yagowal/serialize",
+			"revision": "0b4641b413be7460e802abd0a9ac7997686e0548",
+			"revisionTime": "2017-09-11T02:26:16Z"
+		},
+		{
+			"checksumSHA1": "FKfJi7NCOujlOTdsVrQZctdNT1o=",
+			"path": "github.com/widaT/yagowal/snap",
+			"revision": "0b4641b413be7460e802abd0a9ac7997686e0548",
+			"revisionTime": "2017-09-11T02:26:16Z"
+		},
+		{
+			"checksumSHA1": "syG461dPlvUgcNVoumC4DqhmCz4=",
+			"path": "github.com/widaT/yagowal/structure",
+			"revision": "0b4641b413be7460e802abd0a9ac7997686e0548",
+			"revisionTime": "2017-09-11T02:26:16Z"
+		},
+		{
+			"checksumSHA1": "FTx/X0z4mipxz/H43puptx9T1BE=",
+			"path": "github.com/widaT/yagowal/wal",
+			"revision": "0b4641b413be7460e802abd0a9ac7997686e0548",
+			"revisionTime": "2017-09-11T02:26:16Z"
+		}
+	],
+	"rootPath": "github.com/widaT/newredis"
+}
