@@ -12,7 +12,8 @@ import (
 const VERSION = "newredis v0.1"
 func main() {
 	s := flag.Uint64("s",1000000,"snapshot count")
-	w :=flag.String("w","aw","use wal to save data to disk,es every second ,al allways,no no use wal")
+	//@todo 可以尝试下every second
+	w :=flag.String("w","aw","use wal to save data to disk al allways,no no use wal")
 	p :=flag.Int("p",6380,"port for net listen")
 	P :=flag.Bool("P",false,"profiling this program")
 	flag.Parse()

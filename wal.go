@@ -10,7 +10,7 @@ import (
 	"encoding/binary"
 	"os"
 	"github.com/vmihailenco/msgpack"
-	"time"
+	//"time"
 )
 
 
@@ -211,8 +211,7 @@ func InitNewWal( s *Server) {
 	}
 	s.w.snapshotter = snap.New(s.w.snapdir)
 	s.w.replayWAL()
-
-	if s.conf.walsavetype  == "es" {
+	/*if s.conf.walsavetype  == "es" {
 		go func() {
 			for {
 				select {
@@ -227,6 +226,5 @@ func InitNewWal( s *Server) {
 				}
 			}
 		}()
-	}
-
+	}*/
 }
