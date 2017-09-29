@@ -215,9 +215,7 @@ func InitNewWal( s *Server) {
 	if s.conf.walsavetype  == "es" {
 		go func() {
 			for {
-				select {
-				case <-time.After(1*time.Second):
-					//s.mu.Lock()
+				if len(ents) > 0 {
 					entscopy := ents
 					ents =[]structure.Entry{}
 					//s.mu.Unlock()
@@ -225,6 +223,7 @@ func InitNewWal( s *Server) {
 						s.w.wal.SaveEntry(&v)
 					}
 				}
+				time.Sleep(1 * time.Second)
 			}
 		}()
 	}
