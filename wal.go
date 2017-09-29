@@ -162,16 +162,6 @@ func (n *Wal)loadSnapshot() *structure.SnapshotRecord {
 
 func (wal *Wal)save(opt *Opt)  error {
 	switch wal.s.conf.walsavetype {
-	case "es"://every second
-		server := wal.s
-		b,err := msgpack.Marshal(opt)
-		if err != nil {
-			return err
-		}
-		wal.s.mu.Lock()
-		ents = append(ents,structure.Entry{Index: server.w.nowIndex + 1, Data:b})
-		wal.s.mu.Unlock()
-		server.w.nowIndex ++
 	case "aw"://all way
 		server := wal.s
 		b,err := msgpack.Marshal(opt)
@@ -212,19 +202,4 @@ func InitNewWal( s *Server) {
 	}
 	s.w.snapshotter = snap.New(s.w.snapdir)
 	s.w.replayWAL()
-	if s.conf.walsavetype  == "es" {
-		go func() {
-			for {
-				if len(ents) > 0 {
-					entscopy := ents
-					ents =[]structure.Entry{}
-					//s.mu.Unlock()
-					for _,v := range entscopy {
-						s.w.wal.SaveEntry(&v)
-					}
-				}
-				time.Sleep(1 * time.Second)
-			}
-		}()
-	}
 }
