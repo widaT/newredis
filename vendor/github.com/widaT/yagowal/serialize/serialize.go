@@ -1,7 +1,6 @@
 package serialize
 
 import (
-	"github.com/widaT/gowal/pkg/serialize"
 	"github.com/widaT/yagowal/structure"
 )
 
@@ -29,6 +28,6 @@ func MustUnmarshal(um Unmarshaler, data []byte) {
 }
 func MustUnmarshalEntry(d []byte) structure.Entry {
 	var e structure.Entry
-	serialize.MustUnmarshal(&e, d)
+	MustUnmarshal(&e, d)
 	return e
 }

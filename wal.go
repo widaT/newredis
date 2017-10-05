@@ -11,13 +11,7 @@ import (
 	"os"
 	"github.com/vmihailenco/msgpack"
 	//"time"
-	"time"
 )
-
-
-var ents []structure.Entry
-
-
 
 func FloatToBytes(n float64) []byte {
 	tmp := float64(n)
