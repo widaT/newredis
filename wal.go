@@ -18,7 +18,6 @@ import (
 var ents []structure.Entry
 
 
-
 func FloatToBytes(n float64) []byte {
 	tmp := float64(n)
 	bytesBuffer := bytes.NewBuffer([]byte{})
@@ -165,9 +164,7 @@ func (wal *Wal)save(opt *Opt)  error {
 		if err != nil {
 			return err
 		}
-		wal.s.mu.Lock()
 		ents = append(ents,structure.Entry{Index: server.w.nowIndex + 1, Data:b})
-		wal.s.mu.Unlock()
 		server.w.nowIndex ++
 	case "aw"://all way
 		server := wal.s

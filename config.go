@@ -46,3 +46,7 @@ func (c *Config) OpenWal(s string) *Config {
 func (c *Config)Gaddr() string{
 	return c.laddr
 }
+
+func (c *Config)Gwalsavetype() string{
+	return c.walsavetype
+}

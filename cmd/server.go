@@ -17,6 +17,8 @@ func main() {
 	p :=flag.Int("p",6380,"port for net listen")
 	P :=flag.Bool("P",false,"profiling this program")
 	flag.Parse()
+
+
 	if flag.Arg(0) == "version" {
 		fmt.Println(VERSION)
 		return
@@ -28,7 +30,7 @@ func main() {
 	}
 
 	c := newredis.DefaultConfig().SnapCount(*s).OpenWal(*w).Laddr(fmt.Sprintf(":%d",*p))
-	go log.Printf("started server at %s", c.Gaddr())
+	go log.Printf("started server at %s wal model %s", c.Gaddr(),c.Gwalsavetype())
 	err := newredis.ListenAndServe(c,
 		func(conn newredis.Conn) bool {
 			return true
