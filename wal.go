@@ -164,7 +164,9 @@ func (wal *Wal)save(opt *Opt)  error {
 		if err != nil {
 			return err
 		}
+		wal.s.db.rwmu.Lock()
 		ents = append(ents,structure.Entry{Index: server.w.nowIndex + 1, Data:b})
+		wal.s.db.rwmu.Unlock()
 		server.w.nowIndex ++
 	case "aw"://all way
 		server := wal.s
@@ -210,8 +212,10 @@ func InitNewWal( s *Server) {
 		go func() {
 			for {
 				if len(ents) > 0 {
+					s.db.rwmu.Lock()
 					entscopy := ents
 					ents =[]structure.Entry{}
+					s.db.rwmu.Unlock()
 					go s.w.wal.BatchSave(entscopy)
 				}
 				time.Sleep(1 * time.Second)
