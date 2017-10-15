@@ -5,33 +5,30 @@ import (
 	"strings"
 )
 
-
 type Literator interface {
 	// Next returns true if the iterator contains subsequent elements
 	// and advances its state to the next element if that is possible.
 	Next() (ok bool)
 	// Value returns the current value.
 	Value() []byte
-	Key()  int
+	Key() int
 	// Close this iterator to reap resources associated with it.  While not
 	// strictly required, it will provide extra hints for the garbage collector.
 	Close()
 }
 
-
 type Liter struct {
 	current *element
-	list    * List
+	list    *List
 	index   int
 	value   []byte
 }
-
 
 func (i Liter) Key() int {
 	return i.index
 }
 
-func (i Liter) Value() []byte{
+func (i Liter) Value() []byte {
 	return i.value
 }
 
@@ -46,7 +43,7 @@ func (i *Liter) Next() bool {
 }
 
 func (i *Liter) Close() {
-	i.index=0
+	i.index = 0
 	i.value = nil
 	i.current = nil
 	i.list = nil
@@ -64,10 +61,9 @@ type element struct {
 	next  *element
 }
 
-func (e *element ) hasNext() bool  {
+func (e *element) hasNext() bool {
 	return e.next != nil
 }
-
 
 // New instantiates a new empty list
 func NewList() *List {
@@ -77,13 +73,11 @@ func NewList() *List {
 // Iterator returns an Iterator that will go through all elements s.
 func (list *List) Literator() Literator {
 	return &Liter{
-		index:0,
+		index:   0,
 		current: list.first,
 		list:    list,
 	}
 }
-
-
 
 // Seek returns a bidirectional iterator starting with the first element whose
 // key is greater or equal to key; otherwise, a nil iterator is returned.
@@ -94,14 +88,14 @@ func (list *List) Seek(index int) Literator {
 	}
 
 	return &Liter{
-		index:index,
+		index:   index,
 		current: current,
 		list:    list,
 		value:   current.value,
 	}
 }
 
-func (list*List)GetIndex(index int) *element  {
+func (list *List) GetIndex(index int) *element {
 	if !list.withinRange(index) {
 		return nil
 	}
@@ -138,8 +132,8 @@ func (list *List) Append(values ...[]byte) {
 	list.Add(values...)
 }
 
-func (list *List) Lpush(values ...[]byte)  int {
-	for v := 0; v <= len(values) - 1; v++ {
+func (list *List) Lpush(values ...[]byte) int {
+	for v := 0; v <= len(values)-1; v++ {
 		newElement := &element{value: values[v], next: list.first}
 		if list.size == 0 {
 			list.first = newElement
@@ -153,7 +147,7 @@ func (list *List) Lpush(values ...[]byte)  int {
 	return list.size
 }
 
-func (list *List) Rpush(values ...[]byte)  int {
+func (list *List) Rpush(values ...[]byte) int {
 	list.Add(values...)
 	return list.size
 }
@@ -164,10 +158,9 @@ func (list *List) Lpop() (value []byte) {
 	return
 }
 
-
 func (list *List) Rpop() (value []byte) {
-	value, _ = list.Get(list.size -1)
-	list.Remove(list.size-1)
+	value, _ = list.Get(list.size - 1)
+	list.Remove(list.size - 1)
 	return
 }
 
@@ -207,8 +200,6 @@ func (list *List) Get(index int) ([]byte, bool) {
 	}
 	return element.value, true
 }
-
-
 
 // Remove removes one or more elements from the list with the supplied indices.
 func (list *List) Remove(index int) {
@@ -252,7 +243,6 @@ func (list *List) Remove(index int) {
 	list.size--
 }
 
-
 // Values returns all elements in the list.
 func (list *List) Values() [][]byte {
 	values := make([][]byte, list.size, list.size)
@@ -278,8 +268,6 @@ func (list *List) Clear() {
 	list.first = nil
 	list.last = nil
 }
-
-
 
 // Swap swaps values of two elements at the given indices.
 func (list *List) Swap(i, j int) {

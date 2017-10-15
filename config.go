@@ -12,9 +12,9 @@ func DefaultConfig() *Config {
 	return &Config{
 		net:    "tcp",
 		laddr:    ":6380",
-		snapCount :100000,
+		snapCount :10000,
 		datadir:"data/",
-		walsavetype:"es",
+		walsavetype:"aw",
 	}
 }
 

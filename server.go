@@ -92,7 +92,6 @@ type Conn interface {
 	NetConn() net.Conn
 }
 
-
 // NewServerNetworkType returns a new Redcon server. The network net must be
 // a stream-oriented network: "tcp", "tcp4", "tcp6", "unix" or "unixpacket"
 func NewServerNetwork(
@@ -101,10 +100,10 @@ func NewServerNetwork(
 	closed func(conn Conn, err error),
 ) *Server {
 	s := &Server{
-		conf:config,
-		accept:  accept,
-		closed:  closed,
-		conns:   make(map[*conn]bool),
+		conf:   config,
+		accept: accept,
+		closed: closed,
+		conns:  make(map[*conn]bool),
 	}
 	s.db = NewMemdb(s)
 	InitNewWal(s)
@@ -143,7 +142,7 @@ func ListenAndServeNetwork(
 	accept func(conn Conn) bool,
 	closed func(conn Conn, err error),
 ) error {
-	return NewServerNetwork(conf,accept, closed).ListenAndServe()
+	return NewServerNetwork(conf, accept, closed).ListenAndServe()
 }
 
 // ListenServeAndSignal serves incoming connections and passes nil or error
@@ -245,7 +244,7 @@ func handle(s *Server, c *conn) {
 					c.cmds = c.cmds[1:]
 				}
 				//s.handler(s,c, cmd)
-				DoCmd(s,c,cmd)
+				DoCmd(s, c, cmd)
 			}
 			if c.detached {
 				// client has been detached
@@ -374,7 +373,7 @@ type Command struct {
 
 // Server defines a server for clients for managing client connections.
 type Server struct {
-	mu      sync.Mutex
+	mu sync.Mutex
 	/*net     string
 	laddr   string*/
 	conf    *Config
@@ -385,7 +384,7 @@ type Server struct {
 	ln      net.Listener
 	done    bool
 	db      *Memdb
-	w 		*Wal
+	w       *Wal
 }
 
 // Writer allows for writing RESP messages.
@@ -635,7 +634,7 @@ func (rd *Reader) readCommands(leftover *int) ([]Command, error) {
 					if b[i-1] != '\r' {
 						return nil, errInvalidMultiBulkLength
 					}
-					count, err := parseInt(b[1 : i-1])
+					count, err := parseInt(b[1: i-1])
 					if err != nil || count <= 0 {
 						return nil, errInvalidMultiBulkLength
 					}
@@ -654,7 +653,7 @@ func (rd *Reader) readCommands(leftover *int) ([]Command, error) {
 									if b[i-1] != '\r' {
 										return nil, errInvalidBulkLength
 									}
-									size, err := parseInt(b[si+1 : i-1])
+									size, err := parseInt(b[si+1: i-1])
 									if err != nil || size < 0 {
 										return nil, errInvalidBulkLength
 									}

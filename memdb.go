@@ -30,7 +30,7 @@ type Memdb struct {
 	HSortSet HashHashInt
 	skiplist HashSkipList
 	rwmu sync.RWMutex
-	recovebool bool
+	recovebool bool   //初始化的时候不重复写wal
 	s *Server
 }
 

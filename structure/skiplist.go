@@ -9,12 +9,11 @@ const p = 0.25
 
 const DefaultMaxLevel = 32
 
-
 type node struct {
-	forward    []*node
-	backward   *node
-	key  float64
-	value  string
+	forward  []*node
+	backward *node
+	key      float64
+	value    string
 }
 
 func (n *node) next() *node {
@@ -117,8 +116,6 @@ func (i *iter) Next() bool {
 	return true
 }
 
-
-
 func (i *iter) Previous() bool {
 	if !i.current.hasPrevious() {
 		return false
@@ -144,7 +141,7 @@ func (i *iter) Seek(key float64) (ok bool) {
 	// If the target key occurs before the current key, we cannot take advantage
 	// of the heretofore spent traversal cost to find it; resetting back to the
 	// beginning is the safest choice.
-	if  key < current.key {
+	if key < current.key {
 		current = list.header
 	}
 
@@ -156,7 +153,7 @@ func (i *iter) Seek(key float64) (ok bool) {
 		current = current.backward
 	}
 
-	current = list.getPath(current, nil, key,"")
+	current = list.getPath(current, nil, key, "")
 
 	if current == nil {
 		return
@@ -164,7 +161,7 @@ func (i *iter) Seek(key float64) (ok bool) {
 	i.current = current
 	i.key = current.key
 	i.value = current.value
-	for pre := current.previous();pre.key == key;pre = pre.previous(){
+	for pre := current.previous(); pre.key == key; pre = pre.previous() {
 		i.current = pre
 		i.key = pre.key
 		i.value = pre.value
@@ -200,7 +197,6 @@ func (i *rangeIterator) Next() bool {
 	return true
 }
 
-
 func (i *rangeIterator) Previous() bool {
 	if !i.current.hasPrevious() {
 		return false
@@ -208,7 +204,7 @@ func (i *rangeIterator) Previous() bool {
 
 	previous := i.current.previous()
 
-	if  previous.key < i.lowerLimit  {
+	if previous.key < i.lowerLimit {
 		return false
 	}
 
@@ -219,9 +215,9 @@ func (i *rangeIterator) Previous() bool {
 }
 
 func (i *rangeIterator) Seek(key float64) (ok bool) {
-	if key <i.lowerLimit {
+	if key < i.lowerLimit {
 		return
-	} else if  key < i.upperLimit {
+	} else if key < i.upperLimit {
 		return
 	}
 
@@ -236,13 +232,14 @@ func (i *rangeIterator) Close() {
 
 type indexRangeIterator struct {
 	iter
-	index int
+	index      int
 	upperLimit int
 	lowerLimit int
 }
+
 func (i *indexRangeIterator) Close() {
 	i.iter.Close()
-	i.index =0
+	i.index = 0
 	i.upperLimit = 0
 	i.lowerLimit = 0
 }
@@ -283,11 +280,10 @@ func (s *SkipList) Iterator() Iterator {
 	}
 }
 
-
 // Seek returns a bidirectional iterator starting with the first element whose
 // key is greater or equal to key; otherwise, a nil iterator is returned.
 func (s *SkipList) Seek(key float64) Iterator {
-	current := s.getPath(s.header, nil, key,"")
+	current := s.getPath(s.header, nil, key, "")
 
 	fmt.Println(current)
 	if current == nil {
@@ -341,7 +337,7 @@ func (s *SkipList) SeekToLast() Iterator {
 // elements of the skip list that are greater or equal than from, but
 // less than to.
 func (s *SkipList) Range(from, to float64) Iterator {
-	start := s.getPath(s.header, nil, from,"")
+	start := s.getPath(s.header, nil, from, "")
 	return &rangeIterator{
 		iter: iter{
 			current: &node{
@@ -355,10 +351,9 @@ func (s *SkipList) Range(from, to float64) Iterator {
 	}
 }
 
-
 func (s *SkipList) IndexRange(l, u int) Iterator {
 	n := s.header
-	for  i := 0;i <= l;i++ {
+	for i := 0; i <= l; i++ {
 		n = n.next()
 	}
 	return &indexRangeIterator{
@@ -369,7 +364,7 @@ func (s *SkipList) IndexRange(l, u int) Iterator {
 			},
 			list: s,
 		},
-		index:l,
+		index:      l,
 		upperLimit: u,
 		lowerLimit: l,
 	}
@@ -401,7 +396,7 @@ func (s SkipList) randomLevel() (n int) {
 // not present in s). The second return value is true when the key is
 // present.
 func (s *SkipList) Get(key float64) (value string, ok bool) {
-	candidate := s.getPath(s.header, nil, key,"")
+	candidate := s.getPath(s.header, nil, key, "")
 
 	if candidate == nil || candidate.key != key {
 		return "", false
@@ -414,7 +409,7 @@ func (s *SkipList) Get(key float64) (value string, ok bool) {
 // to min. It returns its value, its actual key, and whether such a
 // node is present in the skip list.
 func (s *SkipList) GetGreaterOrEqual(min float64) (actualKey float64, value string, ok bool) {
-	candidate := s.getPath(s.header, nil, min,"")
+	candidate := s.getPath(s.header, nil, min, "")
 
 	if candidate != nil {
 		return candidate.key, candidate.value, true
@@ -427,11 +422,11 @@ func (s *SkipList) GetGreaterOrEqual(min float64) (actualKey float64, value stri
 // update is nil, it will be left alone (the candidate node will still
 // be returned). If update is not nil, but it doesn't have enough
 // slots for all the nodes in the path, getPath will panic.
-func (s *SkipList) getPath(current *node, update []*node, key float64,value string) *node {
+func (s *SkipList) getPath(current *node, update []*node, key float64, value string) *node {
 	depth := len(current.forward) - 1
 
 	for i := depth; i >= 0; i-- {
-		for current.forward[i] != nil && ( current.forward[i].key <  key || ( current.forward[i].key ==  key && current.forward[i].value < value))  {
+		for current.forward[i] != nil && ( current.forward[i].key < key || ( current.forward[i].key == key && current.forward[i].value < value)) {
 			current = current.forward[i]
 		}
 		if update != nil {
@@ -445,7 +440,7 @@ func (s *SkipList) getPath(current *node, update []*node, key float64,value stri
 func (s *SkipList) Set(key float64, value string) {
 	// s.level starts from 0, so we need to allocate one.
 	update := make([]*node, s.level()+1, s.effectiveMaxLevel()+1)
-	candidate := s.getPath(s.header, update, key,value)
+	candidate := s.getPath(s.header, update, key, value)
 
 	if candidate != nil && candidate.key == key && candidate.value == value {
 		return
@@ -472,7 +467,6 @@ func (s *SkipList) Set(key float64, value string) {
 	previous := update[0]
 	newNode.backward = previous
 
-
 	for i := 0; i <= newLevel; i++ {
 		newNode.forward[i] = update[i].forward[i]
 		update[i].forward[i] = newNode
@@ -494,37 +488,35 @@ func (s *SkipList) Set(key float64, value string) {
 // Delete removes the node with the given key.
 //
 // It returns the old value and whether the node was present.
-func (s *SkipList) DeleteAll(key float64)  bool {
+func (s *SkipList) DeleteAll(key float64) bool {
 	update := make([]*node, s.level()+1, s.effectiveMaxLevel())
-	candidate := s.getPath(s.header, update, key,"")
-
+	candidate := s.getPath(s.header, update, key, "")
 
 	if candidate == nil || candidate.key != key {
-		return  false
+		return false
 	}
 
-	for next := candidate.next();next.key == key;next = candidate.next() {
-		s.Delete(next.key,next.value)
+	for next := candidate.next(); next.key == key; next = candidate.next() {
+		s.Delete(next.key, next.value)
 	}
 
-	for pre := candidate.previous();pre.key == key;pre = candidate.previous() {
-		s.Delete(pre.key,pre.value)
+	for pre := candidate.previous(); pre.key == key; pre = candidate.previous() {
+		s.Delete(pre.key, pre.value)
 	}
 
 	if candidate.key == key {
-		s.Delete(candidate.key,candidate.value)
+		s.Delete(candidate.key, candidate.value)
 	}
 
 	return true
 }
 
-
 // Delete removes the node with the given key.
 //
 // It returns the old value and whether the node was present.
-func (s *SkipList) Delete(key float64,value string) (ok bool) {
+func (s *SkipList) Delete(key float64, value string) (ok bool) {
 	update := make([]*node, s.level()+1, s.effectiveMaxLevel())
-	candidate := s.getPath(s.header, update, key,value)
+	candidate := s.getPath(s.header, update, key, value)
 
 	if candidate == nil || candidate.value != value {
 		return false
@@ -551,7 +543,6 @@ func (s *SkipList) Delete(key float64,value string) (ok bool) {
 
 	return true
 }
-
 
 // Ordered is an interface which can be linearly ordered by the
 // LessThan method, whereby this instance is deemed to be less than

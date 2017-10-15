@@ -14,9 +14,7 @@ import (
 	"time"
 )
 
-
 var ents []structure.Entry
-
 
 func FloatToBytes(n float64) []byte {
 	tmp := float64(n)
@@ -32,38 +30,37 @@ func BytesToFloat(b []byte) float64 {
 	return tmp
 }
 
-type  unstable struct {
+type unstable struct {
 	ents []structure.Entry
 	snap chan *structure.SnapshotRecord
 	sync.RWMutex
 }
 
-func  (u *unstable)appendents(ents []structure.Entry)  {
+func (u *unstable) appendents(ents []structure.Entry) {
 	u.Lock()
-	defer  u.Unlock()
-	u.ents = append(u.ents,ents...)
+	defer u.Unlock()
+	u.ents = append(u.ents, ents...)
 }
 
 func (u *unstable) truncate() (ents []structure.Entry) {
 	u.Lock()
-	defer  u.Unlock()
+	defer u.Unlock()
 	ents = u.ents
 	u.ents = nil
 	return
 }
 
 type Wal struct {
-	wal *wal.WAL
-	snapshotter *snap.Snapshotter
-	waldir string
-	snapdir string
-	nowIndex uint64
+	wal           *wal.WAL
+	snapshotter   *snap.Snapshotter
+	waldir        string
+	snapdir       string
+	nowIndex      uint64
 	snapshotIndex uint64
-	snapcount uint64
-	s *Server
+	snapcount     uint64
+	s             *Server
 	//mu sync.RWMutex
 }
-
 
 func (n *Wal) saveSnap(snap structure.SnapshotRecord) error {
 	if err := n.snapshotter.SaveSnap(snap); err != nil {
@@ -78,16 +75,14 @@ func (n *Wal) saveSnap(snap structure.SnapshotRecord) error {
 	return nil
 }
 
-
-
 func (w *Wal) replayWAL() {
 	snapshot := w.loadSnapshot()
 
-	var ents  []structure.Entry
+	var ents []structure.Entry
 	var err error
 	if snapshot != nil {
-		ents, err = w.wal.ReadAll(&structure.Snapshot{Index:snapshot.Index})
-	}else {
+		ents, err = w.wal.ReadAll(&structure.Snapshot{Index: snapshot.Index})
+	} else {
 		ents, err = w.wal.ReadAll(nil)
 	}
 
@@ -103,20 +98,20 @@ func (w *Wal) replayWAL() {
 		w.s.w.snapshotIndex = snapshot.Index
 		w.s.w.nowIndex = snapshot.Index
 	}
-	//fmt.Println(ents)
+	//
 	w.s.db.recovebool = true
 	if len(ents) > 0 {
 		for _, ent := range ents {
 			//fmt.Println(ent)
 			var dataKv Opt
-			if err := msgpack.Unmarshal(ent.Data,&dataKv); err != nil {
+			if err := msgpack.Unmarshal(ent.Data, &dataKv); err != nil {
 				log.Fatalf("raftexample: could not decode message (%v)", err)
 				continue
 			}
 			//fmt.Println(dataKv)
 			switch  dataKv.Method {
 			case "rpush":
-				w.s.db.Rpush( dataKv.Args...)
+				w.s.db.Rpush(dataKv.Args...)
 			case "lpush":
 				w.s.db.Lpush(dataKv.Args...)
 			case "lpop":
@@ -134,7 +129,7 @@ func (w *Wal) replayWAL() {
 			case "zadd":
 				key := dataKv.Args[0]
 				score := BytesToFloat(dataKv.Args[1])
-				w.s.db.Zadd(dataKv.Key,score,string(key))
+				w.s.db.Zadd(dataKv.Key, score, string(key))
 			case "incr":
 				w.s.db.Incr(dataKv.Key)
 			case "mset":
@@ -148,7 +143,7 @@ func (w *Wal) replayWAL() {
 	w.s.db.recovebool = false
 }
 
-func (n *Wal)loadSnapshot() *structure.SnapshotRecord {
+func (n *Wal) loadSnapshot() *structure.SnapshotRecord {
 	snapshot, err := n.snapshotter.Load()
 	if err != nil && err != snap.ErrNoSnapshot {
 		log.Fatalf("raft-redis: error loading snapshot (%v)", err)
@@ -156,25 +151,25 @@ func (n *Wal)loadSnapshot() *structure.SnapshotRecord {
 	return snapshot
 }
 
-func (wal *Wal)save(opt *Opt)  error {
+func (wal *Wal) save(opt *Opt) error {
 	switch wal.s.conf.walsavetype {
-	case "es"://every second
+	case "es": //every second
 		server := wal.s
-		b,err := msgpack.Marshal(opt)
+		b, err := msgpack.Marshal(opt)
 		if err != nil {
 			return err
 		}
 		wal.s.db.rwmu.Lock()
-		ents = append(ents,structure.Entry{Index: server.w.nowIndex + 1, Data:b})
+		ents = append(ents, structure.Entry{Index: server.w.nowIndex + 1, Data: b})
 		wal.s.db.rwmu.Unlock()
 		server.w.nowIndex ++
-	case "aw"://all way
+	case "aw": //all way
 		server := wal.s
-		b,err := msgpack.Marshal(opt)
+		b, err := msgpack.Marshal(opt)
 		if err != nil {
 			return err
 		}
-		es := structure.Entry{Index: server.w.nowIndex + 1, Data:b}
+		es := structure.Entry{Index: server.w.nowIndex + 1, Data: b}
 		go wal.wal.SaveEntry(&es)
 		if server.w.nowIndex-wal.snapshotIndex >= server.w.snapcount {
 			data, err := wal.s.db.getSnapshot()
@@ -192,15 +187,15 @@ func (wal *Wal)save(opt *Opt)  error {
 	return nil
 }
 
-func InitNewWal( s *Server) {
-	s.w  = &Wal{snapdir:s.conf.datadir+"snap/",waldir:s.conf.datadir+"wal/",snapcount:s.conf.snapCount}
+func InitNewWal(s *Server) {
+	s.w = &Wal{snapdir: s.conf.datadir + "snap/", waldir: s.conf.datadir + "wal/", snapcount: s.conf.snapCount}
 	s.w.s = s
 	var err error
-	s.w.wal,err =wal.New(s.w.waldir)
+	s.w.wal, err = wal.New(s.w.waldir)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_,err = os.Stat(s.w.snapdir)
+	_, err = os.Stat(s.w.snapdir)
 	if os.IsNotExist(err) {
 		if err := os.Mkdir(s.w.snapdir, 0750); err != nil {
 			log.Fatalf("raft-redis: cannot create dir for wal (%v)", err)
@@ -208,13 +203,13 @@ func InitNewWal( s *Server) {
 	}
 	s.w.snapshotter = snap.New(s.w.snapdir)
 	s.w.replayWAL()
-	if s.conf.walsavetype  == "es" {
+	if s.conf.walsavetype == "es" {
 		go func() {
 			for {
 				if len(ents) > 0 {
 					s.db.rwmu.Lock()
 					entscopy := ents
-					ents =[]structure.Entry{}
+					ents = []structure.Entry{}
 					s.db.rwmu.Unlock()
 					go s.w.wal.BatchSave(entscopy)
 				}
