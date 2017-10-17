@@ -6,6 +6,7 @@ type Config struct {
 	datadir  string
 	snapCount uint64
 	walsavetype string
+	sync      bool
 }
 
 func DefaultConfig() *Config {
@@ -15,6 +16,7 @@ func DefaultConfig() *Config {
 		snapCount :10000,
 		datadir:"data/",
 		walsavetype:"aw",
+		sync : true,
 	}
 }
 
@@ -30,6 +32,12 @@ func (c *Config) Laddr(h string) *Config {
 
 func (c *Config) SnapCount(n uint64) *Config {
 	c.snapCount = n
+	return c
+}
+
+
+func (c *Config) Sync(b bool) *Config {
+	c.sync = b
 	return c
 }
 
@@ -49,4 +57,8 @@ func (c *Config)Gaddr() string{
 
 func (c *Config)Gwalsavetype() string{
 	return c.walsavetype
+}
+
+func (c *Config)Gsync() bool{
+	return c.sync
 }

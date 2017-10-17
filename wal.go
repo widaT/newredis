@@ -62,16 +62,24 @@ type Wal struct {
 	//mu sync.RWMutex
 }
 
-func (n *Wal) saveSnap(snap structure.SnapshotRecord) error {
-	if err := n.snapshotter.SaveSnap(snap); err != nil {
+func (w *Wal) saveSnap(snap structure.SnapshotRecord) error {
+	if err := w.snapshotter.SaveSnap(snap); err != nil {
 		return err
 	}
 	walSnap := structure.Snapshot{
 		Index: snap.Index,
 	}
-	if err := n.wal.SaveSnapshot(walSnap); err != nil {
-		return err
+
+	if w.s.conf.Gsync() {
+		if err := w.wal.SyncSaveSnapshot(walSnap); err != nil {
+			return err
+		}
+	}else {
+		if err := w.wal.SaveSnapshot(walSnap); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -159,9 +167,7 @@ func (wal *Wal) save(opt *Opt) error {
 		if err != nil {
 			return err
 		}
-		wal.s.db.rwmu.Lock()
 		ents = append(ents, structure.Entry{Index: server.w.nowIndex + 1, Data: b})
-		wal.s.db.rwmu.Unlock()
 		server.w.nowIndex ++
 	case "aw": //all way
 		server := wal.s
@@ -170,7 +176,12 @@ func (wal *Wal) save(opt *Opt) error {
 			return err
 		}
 		es := structure.Entry{Index: server.w.nowIndex + 1, Data: b}
-		go wal.wal.SaveEntry(&es)
+		if wal.s.conf.Gsync() {
+			go wal.wal.SyncSaveEntry(&es)
+		}else {
+			go wal.wal.SaveEntry(&es)
+		}
+
 		if server.w.nowIndex-wal.snapshotIndex >= server.w.snapcount {
 			data, err := wal.s.db.getSnapshot()
 			if err != nil {
@@ -207,10 +218,8 @@ func InitNewWal(s *Server) {
 		go func() {
 			for {
 				if len(ents) > 0 {
-					s.db.rwmu.Lock()
 					entscopy := ents
 					ents = []structure.Entry{}
-					s.db.rwmu.Unlock()
 					go s.w.wal.BatchSave(entscopy)
 				}
 				time.Sleep(1 * time.Second)

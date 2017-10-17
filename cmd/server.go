@@ -13,7 +13,8 @@ import (
 const VERSION = "newredis v0.1"
 
 func main() {
-	s := flag.Uint64("s", 10000, "snapshot count")
+	count := flag.Uint64("c", 10000, "snapshot count")
+	s := flag.Bool("sync", false, "sync every wal recorder")
 	w := flag.String("w", "aw", "use wal to save data to disk al allways,es every second ,no no use wal")
 	d := flag.String("data", "data/", "dir to save wal and snapshot")
 	p := flag.Int("p", 6380, "port for net listen")
@@ -37,7 +38,7 @@ func main() {
 		}
 	}
 
-	c := newredis.DefaultConfig().SnapCount(*s).OpenWal(*w).Laddr(fmt.Sprintf(":%d", *p)).DataDir(dirpath)
+	c := newredis.DefaultConfig().SnapCount(*count).OpenWal(*w).Laddr(fmt.Sprintf(":%d", *p)).DataDir(dirpath).Sync(*s)
 	go log.Printf("started server at %s wal model %s", c.Gaddr(), c.Gwalsavetype())
 	err = newredis.ListenAndServe(c,
 		func(conn newredis.Conn) bool {
